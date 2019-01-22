@@ -1,0 +1,10 @@
+{
+  "name": "mysql",
+  "connector": "mysql",
+  "url": "mysql://username:password@host/databasename",
+  "host": "",
+  "port": "",
+  "user": "",
+  "password": "",
+  "database": ""
+}

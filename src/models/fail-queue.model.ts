@@ -1,7 +1,7 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
-export class Fail_queue extends Entity {
+export class FailQueue extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -31,7 +31,7 @@ export class Fail_queue extends Entity {
   })
   attempts: number;
 
-  constructor(data?: Partial<Fail_queue>) {
+  constructor(data?: Partial<FailQueue>) {
     super(data);
   }
 }

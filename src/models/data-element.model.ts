@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class DataElement extends Entity {
@@ -12,13 +12,13 @@ export class DataElement extends Entity {
     type: 'string',
     required: true,
   })
-  dataElement: string;
+  dataElementName: string;
 
   @property({
-    type: 'object',
+    type: 'string',
     required: true,
   })
-  validationRules: object;
+  dataElementId: string;
 
   @property({
     type: 'number',

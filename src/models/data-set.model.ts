@@ -1,5 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
-import {DataElement} from './data-element.model';
+import { Entity, model, property } from '@loopback/repository';
+import { DataElement } from './data-element.model';
 
 @model()
 export class DataSet extends Entity {
@@ -20,6 +20,18 @@ export class DataSet extends Entity {
     required: true,
   })
   description: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  categoryCombo: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  dhis2Id: string;
 
   constructor(data?: Partial<DataSet>) {
     super(data);
