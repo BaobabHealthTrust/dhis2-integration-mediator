@@ -122,6 +122,7 @@ export class DataElementsController {
     }
 
     // for  email unauthorized elements
+    // trigger queue
   }
 
   @post('/dhis2/data-elements', {
