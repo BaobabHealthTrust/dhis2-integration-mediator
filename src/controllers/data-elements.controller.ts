@@ -1,5 +1,10 @@
-import {repository, Filter, ArrayType} from '@loopback/repository';
-
+import {
+  repository,
+  Filter,
+  ArrayType,
+  Where,
+  WhereBuilder,
+} from '@loopback/repository';
 import {
   ClientRepository,
   DataSetRepository,
@@ -175,7 +180,11 @@ export class DataElementsController {
       },
     },
   })
-  async find(): Promise<any> {
+  async find(
+    @param.query.number('limit') limit = 0,
+    @param.query.number('skip') skip = 0,
+    @param.query.string('query') query = '',
+  ): Promise<any> {
     const orchestrations: Array<object> = [];
 
     const properties: object = {property: 'Primary Route'};
@@ -190,8 +199,18 @@ export class DataElementsController {
         where: {clientId: client},
       });
       if (dataSet) {
+        //TODO: Query not being processed
+        const where = new WhereBuilder()
+          .eq('dataSetId', dataSet.id)
+          .inq('dataElementName', ['Open'])
+          .build();
         dataElements = await this.dataElementRepository.find({
-          where: {dataSetId: dataSet.id},
+          where: {
+            ...where,
+            dataElementName: {like: `%${query}%`},
+          },
+          skip,
+          limit,
         });
       }
     }
@@ -202,7 +221,7 @@ export class DataElementsController {
       resourceType: 'ValueSet',
       expansion: {
         total: dataElements.length,
-        offset: 0,
+        offset: skip,
         contains: dataElements.map(dataElement => ({
           stystem: `${process.env.DHIS2_URL}`,
           code: dataElement.dataElementId,
@@ -211,19 +230,7 @@ export class DataElementsController {
       },
     };
 
-    return this.res.json(
-      returnObject,
-      // buildReturnObject(
-      //   'urn',
-      //   'Successful',
-      //   200,
-      //   {},
-      //   JSON.stringify(returnObject),
-      //   orchestrations,
-      //   properties,
-      //   this.req,
-      // ),
-    );
+    return this.res.json(returnObject);
   }
 
   @get('/dhis2/organisation-units', {
@@ -242,8 +249,6 @@ export class DataElementsController {
     const properties: object = {property: 'Primary Route'};
 
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
-
-    // console.log(process.env);
 
     const response = await axios({
       url: `${
@@ -314,18 +319,6 @@ export class DataElementsController {
 
     this.res.set('Content-Type', 'application/json');
 
-    return this.res.json(
-      organisationUnits,
-      // buildReturnObject(
-      //   'urn',
-      //   'Successful',
-      //   200,
-      //   {},
-      //   JSON.stringify({ organisationUnits }),
-      //   orchestrations,
-      //   { ...properties },
-      //   this.req,
-      // ),
-    );
+    return this.res.json(organisationUnits);
   }
 }
