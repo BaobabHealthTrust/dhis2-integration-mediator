@@ -1,4 +1,4 @@
-import { repository, Filter, ArrayType } from '@loopback/repository';
+import { repository, Filter, ArrayType, Where, WhereBuilder } from '@loopback/repository';
 import {
   ClientRepository,
   DataSetRepository,
@@ -89,6 +89,9 @@ export class DataElementsController {
     },
   })
   async find(
+    @param.query.number('limit') limit = 0,
+    @param.query.number('skip') skip = 0,
+    @param.query.string('query') query = ''
   ): Promise<any> {
     const orchestrations: Array<object> = [];
 
@@ -102,7 +105,11 @@ export class DataElementsController {
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({ where: { clientId: client.id } })
       if (dataSet) {
-        dataElements = await this.dataElementRepository.find({ where: { dataSetId: dataSet.id } })
+        //TODO: Query not being processed
+        const whereBuilder = new WhereBuilder();
+        whereBuilder.eq('dataSetId', dataSet.id);
+        const where = whereBuilder.build();
+        dataElements = await this.dataElementRepository.find({ where, skip, limit })
       }
     }
 
@@ -112,7 +119,7 @@ export class DataElementsController {
       "resourceType": "ValueSet",
       "expansion": {
         "total": dataElements.length,
-        "offset": 0,
+        "offset": skip,
         "contains": dataElements.map(dataElement => ({
           stystem: `${process.env.DHIS2_URL}`,
           code: dataElement.dataElementId,
@@ -123,16 +130,6 @@ export class DataElementsController {
 
     return this.res.json(
       returnObject
-      // buildReturnObject(
-      //   'urn',
-      //   'Successful',
-      //   200,
-      //   {},
-      //   JSON.stringify(returnObject),
-      //   orchestrations,
-      //   properties,
-      //   this.req,
-      // ),
     );
   }
 
@@ -154,8 +151,6 @@ export class DataElementsController {
     const properties: object = { property: 'Primary Route' };
 
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
-
-    // console.log(process.env);
 
     const response = await axios({
       url: `${process.env.DHIS2_URL}/organisationUnits.json?fields=id,name,description,level,description,coordinates,shortName,phoneNumber,address`,
@@ -228,16 +223,6 @@ export class DataElementsController {
 
     return this.res.json(
       organisationUnits
-      // buildReturnObject(
-      //   'urn',
-      //   'Successful',
-      //   200,
-      //   {},
-      //   JSON.stringify({ organisationUnits }),
-      //   orchestrations,
-      //   { ...properties },
-      //   this.req,
-      // ),
     );
   }
 }
