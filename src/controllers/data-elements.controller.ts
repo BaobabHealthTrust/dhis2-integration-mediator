@@ -106,10 +106,17 @@ export class DataElementsController {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({ where: { clientId: client.id } })
       if (dataSet) {
         //TODO: Query not being processed
-        const whereBuilder = new WhereBuilder();
-        whereBuilder.eq('dataSetId', dataSet.id);
-        const where = whereBuilder.build();
-        dataElements = await this.dataElementRepository.find({ where, skip, limit })
+        const where = new WhereBuilder()
+          .eq('dataSetId', dataSet.id)
+          .inq('dataElementName', ['Open'])
+          .build();
+        dataElements = await this.dataElementRepository.find({
+          where: {
+            ...where,
+            dataElementName: { like: `%${query}%` } },
+            skip,
+            limit
+        })
       }
     }
 
