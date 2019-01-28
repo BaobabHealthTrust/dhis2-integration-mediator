@@ -74,12 +74,6 @@ export class Migration extends Entity {
   })
   clientId: number;
 
-  @property({
-    type: 'date',
-    required: true,
-  })
-  period: string;
-
   constructor(data?: Partial<Migration>) {
     super(data);
   }

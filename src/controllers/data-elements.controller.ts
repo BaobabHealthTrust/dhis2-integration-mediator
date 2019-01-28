@@ -45,9 +45,9 @@ interface DataElementValue {
   value: number;
   dataElementCode: string;
   organizationUnitCode: string;
+  period: string;
 }
 interface PostObject {
-  effectiveDate: string;
   description: string;
   values: Array<DataElementValue>;
 }
@@ -110,18 +110,17 @@ export class DataElementsController {
   ): Promise<void> {
     const client: number | undefined = await this.findClientId(clientId);
 
-    const {values, effectiveDate} = data;
+    const {values} = data;
 
     const migration: Migration | null = await this.migrationRepository.create({
       clientId: client,
-      period: effectiveDate,
     });
 
     const elementsFailedAuthorization: DataElementValue[] = [];
 
     for (const row of values) {
       ///  update firebase on status
-      const {dataElementCode, value, organizationUnitCode} = row;
+      const {dataElementCode, value, organizationUnitCode, period} = row;
       let migrationDataElement: any = {
         organizationUnitCode,
       };
@@ -143,6 +142,7 @@ export class DataElementsController {
         migrationDataElement.isElementAuthorized = true;
         migrationDataElement.isValueValid = true;
         migrationDataElement.isProcessed = false;
+        migrationDataElement.period = period;
         await this.migrationDataElementsRepository.create(migrationDataElement);
       } else {
         elementsFailedAuthorization.push(row);
@@ -167,9 +167,6 @@ export class DataElementsController {
   })
   async create(@requestBody() data: PostObject): Promise<any> {
     const schema: object = Joi.object().keys({
-      effectiveDate: Joi.date()
-        .iso()
-        .required(),
       description: Joi.string()
         .min(3)
         .required(),
@@ -178,6 +175,7 @@ export class DataElementsController {
           value: Joi.number().required(),
           dataElementCode: Joi.string().required(),
           organizationUnitCode: Joi.string().required(),
+          period: Joi.string().required(),
         }),
       ),
     });
@@ -216,7 +214,7 @@ export class DataElementsController {
   async find(
     @param.query.number('limit') limit = 0,
     @param.query.number('skip') skip = 0,
-    @param.query.string('query') query = '',
+    @param.query.string('name') name = '',
   ): Promise<any> {
     const orchestrations: Array<object> = [];
 
@@ -233,14 +231,11 @@ export class DataElementsController {
       });
       if (dataSet) {
         //TODO: Query not being processed
-        const where = new WhereBuilder()
-          .eq('dataSetId', dataSet.id)
-          .inq('dataElementName', ['Open'])
-          .build();
+        const where = new WhereBuilder().eq('dataSetId', dataSet.id).build();
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
-            dataElementName: {like: `%${query}%`},
+            dataElementName: {like: `%${name}%`},
           },
           skip,
           limit,

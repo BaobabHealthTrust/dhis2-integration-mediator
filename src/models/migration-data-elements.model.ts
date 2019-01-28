@@ -50,6 +50,12 @@ export class MigrationDataElements extends Entity {
   })
   isProcessed: boolean;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  period: string;
+
   constructor(data?: Partial<MigrationDataElements>) {
     super(data);
   }
