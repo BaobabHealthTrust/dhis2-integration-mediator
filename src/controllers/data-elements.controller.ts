@@ -35,11 +35,11 @@ import {
   ResponseObject,
 } from '@loopback/rest';
 
-const {buildReturnObject} = require('@kuunika/openhim-util');
-
 import {inject} from '@loopback/context';
 
 const Joi = require('joi');
+const amqp = require('amqplib/callback_api');
+const {buildReturnObject} = require('@kuunika/openhim-util');
 
 interface DataElementValue {
   value: number;
@@ -74,6 +74,34 @@ export class DataElementsController {
     const client: Client | null = await this.clientRepository.findOne({where});
     if (client) return client.id;
     else return undefined;
+  }
+
+  pushToQueue(migrationId: number | undefined): void {
+    const host = process.env.DIM_QUEUE_HOST || 'amqp://localhost';
+
+    amqp.connect(
+      host,
+      function(err: any, conn: any): void {
+        if (err) console.log(err);
+        conn.createChannel(function(err: any, ch: any) {
+          if (err) console.log(err);
+
+          const options = {
+            durable: true,
+          };
+
+          const queueName =
+            process.env.DIM_QUEUE_NAME || 'DHIS2_INTERGRATION_MEDIATOR';
+
+          ch.assertQueue(queueName, options);
+          const message = JSON.stringify({migrationId});
+          ch.sendToQueue(queueName, new Buffer(message), {persistent: true});
+          console.log(`[x] Sent ${message}`);
+
+          setTimeout(() => conn.close(), 500);
+        });
+      },
+    );
   }
 
   async authenticate(
@@ -118,11 +146,15 @@ export class DataElementsController {
         await this.migrationDataElementsRepository.create(migrationDataElement);
       } else {
         elementsFailedAuthorization.push(row);
+        // TODO: terminate if element is not authorized
       }
     }
 
     // for  email unauthorized elements
     // trigger queue
+    if (migration) {
+      await this.pushToQueue(migration.id);
+    }
   }
 
   @post('/dhis2/data-elements', {
