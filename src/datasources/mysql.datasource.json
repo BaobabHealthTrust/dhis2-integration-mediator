@@ -1,10 +1,10 @@
 {
   "name": "mysql",
   "connector": "mysql",
-  "url": "mysql://dev:root@localhost/dhis2-integration-mediator",
+  "url": "mysql://root:190tz1995@localhost/dhis2-integration-mediator",
   "host": "localhost",
   "port": 3306,
-  "user": "dev",
-  "password": "root",
+  "user": "root",
+  "password": "",
   "database": "dhis2-integration-mediator"
 }
