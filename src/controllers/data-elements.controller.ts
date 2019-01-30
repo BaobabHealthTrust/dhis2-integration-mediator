@@ -91,7 +91,7 @@ export class DataElementsController {
           };
 
           const queueName =
-            process.env.DIM_QUEUE_NAME || 'DHIS2_INTERGRATION_MEDIATOR';
+            process.env.DIM_QUEUE_NAME || 'INTERGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
           const message = JSON.stringify({migrationId});
