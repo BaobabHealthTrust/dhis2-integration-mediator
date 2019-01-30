@@ -148,6 +148,7 @@ export class DataElementsController {
         elementsFailedAuthorization.push(row);
         // TODO: terminate if element is not authorized
       }
+      console.log(elementsFailedAuthorization);
     }
 
     // for  email unauthorized elements
