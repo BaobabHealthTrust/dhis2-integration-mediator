@@ -78,7 +78,6 @@ export class DataElementsController {
 
   pushToQueue(migrationId: number | undefined): void {
     const host = process.env.DIM_QUEUE_HOST || 'amqp://localhost';
-
     amqp.connect(
       host,
       function (err: any, conn: any): void {
@@ -273,16 +272,10 @@ export class DataElementsController {
     },
   })
   async organisationUnits(): Promise<any> {
-    const orchestrations: Array<object> = [];
-
-    const properties: object = { property: 'Primary Route' };
-
-    const clientId: string | undefined = this.req.get('x-openhim-clientid');
-
     const response = await axios({
       url: `${
         process.env.DHIS2_URL
-        }/organisationUnits.json?fields=id,name,description,level,description,coordinates,shortName,phoneNumber,address`,
+        }/organisationUnits.json?paging=false&fields=id,name,description,description,coordinates,shortName,phoneNumber,address&level=4`,
       method: 'get',
       withCredentials: true,
       auth: {
@@ -328,12 +321,12 @@ export class DataElementsController {
               code: 'code',
               display: 'display',
             },
-            telecom: [
+            telecom: rawOrganisationUnit.phoneNumber && [
               {
                 system: 'phonenumber',
-                value: rawOrganisationUnit.phoneNumber || null,
+                value: rawOrganisationUnit.phoneNumber,
               },
-            ],
+            ] || '',
             address: {
               line: [rawOrganisationUnit.address],
             },
