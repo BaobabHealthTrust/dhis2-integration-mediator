@@ -65,5 +65,5 @@ api-docs/
 
 config/mediator.json
 
-./src/datasource/mysql.datasource.json
+src/datasources/mysql.datasource.json
 

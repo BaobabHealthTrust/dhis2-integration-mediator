@@ -35,11 +35,11 @@ import {
   ResponseObject,
 } from '@loopback/rest';
 
-import {inject} from '@loopback/context';
+import { inject } from '@loopback/context';
 
 const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
-const {buildReturnObject} = require('@kuunika/openhim-util');
+const { buildReturnObject } = require('@kuunika/openhim-util');
 
 const schema: object = Joi.object().keys({
   description: Joi.string()
@@ -79,13 +79,13 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
-  ) {}
+  ) { }
 
   async findClientId(
     clientId: string | undefined,
   ): Promise<number | undefined> {
-    const where = {name: clientId};
-    const client: Client | null = await this.clientRepository.findOne({where});
+    const where = { name: clientId };
+    const client: Client | null = await this.clientRepository.findOne({ where });
     if (client) return client.id;
     else return undefined;
   }
@@ -95,9 +95,9 @@ export class DataElementsController {
 
     amqp.connect(
       host,
-      function(err: any, conn: any): void {
+      function (err: any, conn: any): void {
         if (err) console.log(err);
-        conn.createChannel(function(err: any, ch: any) {
+        conn.createChannel(function (err: any, ch: any) {
           if (err) console.log(err);
 
           const options = {
@@ -178,6 +178,7 @@ export class DataElementsController {
           migrationDataElement.isElementAuthorized = true;
           migrationDataElement.isValueValid = true;
           migrationDataElement.isProcessed = false;
+          migrationDataElement.isMigrated = false;
           migrationDataElement.period = period;
 
           migrationDataElement = await this.migrationDataElementsRepository.create(
@@ -223,7 +224,7 @@ export class DataElementsController {
     responses: {
       '200': {
         description: 'Post data element values',
-        content: {'application/json': {schema: {'x-ts-type': ArrayType}}},
+        content: { 'application/json': { schema: { 'x-ts-type': ArrayType } } },
       },
     },
   })
@@ -275,7 +276,7 @@ export class DataElementsController {
   ): Promise<any> {
     const orchestrations: Array<object> = [];
 
-    const properties: object = {property: 'Primary Route'};
+    const properties: object = { property: 'Primary Route' };
 
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
 
@@ -284,7 +285,7 @@ export class DataElementsController {
     const client: number | undefined = await this.findClientId(clientId);
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({
-        where: {clientId: client},
+        where: { clientId: client },
       });
       if (dataSet) {
         //TODO: Query not being processed
@@ -292,7 +293,7 @@ export class DataElementsController {
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
-            dataElementName: {like: `%${name}%`},
+            dataElementName: { like: `%${name}%` },
           },
           skip,
           limit,
@@ -329,16 +330,10 @@ export class DataElementsController {
     },
   })
   async organisationUnits(): Promise<any> {
-    const orchestrations: Array<object> = [];
-
-    const properties: object = {property: 'Primary Route'};
-
-    const clientId: string | undefined = this.req.get('x-openhim-clientid');
-
     const response = await axios({
       url: `${
         process.env.DHIS2_URL
-      }/organisationUnits.json?fields=id,name,description,level,description,coordinates,shortName,phoneNumber,address`,
+        }/organisationUnits.json?paging=false&fields=id,name,description,description,coordinates,shortName,phoneNumber,address&level=4`,
       method: 'get',
       withCredentials: true,
       auth: {

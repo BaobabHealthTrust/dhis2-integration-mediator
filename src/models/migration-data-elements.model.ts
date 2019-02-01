@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class MigrationDataElements extends Entity {
@@ -49,6 +49,12 @@ export class MigrationDataElements extends Entity {
     required: true,
   })
   isProcessed: boolean;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  isMigrated: boolean;
 
   @property({
     type: 'string',
