@@ -16,37 +16,37 @@ export class Migration extends Entity {
   @property({
     type: 'date',
   })
-  structureValidatedAt?: string;
+  structureValidatedAt?: Date;
 
   @property({
     type: 'date',
   })
-  structureFailedValidationAt?: string;
+  structureFailedValidationAt?: Date;
 
   @property({
     type: 'date',
   })
-  elementsAuthorizationAt?: string;
+  elementsAuthorizationAt?: Date;
 
   @property({
     type: 'date',
   })
-  elementsFailedAuthorizationAt?: string;
+  elementsFailedAuthorizationAt?: Date;
 
   @property({
     type: 'date',
   })
-  valuesValidatedAt?: string;
+  valuesValidatedAt?: Date;
 
   @property({
     type: 'date',
   })
-  valuesFailedValidationAt?: string;
+  valuesFailedValidationAt?: Date;
 
   @property({
     type: 'date',
   })
-  reportDispatchedAt?: string;
+  reportDispatchedAt?: Date;
 
   @property({
     type: 'number',

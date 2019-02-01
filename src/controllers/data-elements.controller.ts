@@ -41,6 +41,20 @@ const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
 const {buildReturnObject} = require('@kuunika/openhim-util');
 
+const schema: object = Joi.object().keys({
+  description: Joi.string()
+    .min(3)
+    .required(),
+  values: Joi.array().items(
+    Joi.object().keys({
+      value: Joi.number().required(),
+      dataElementCode: Joi.string().required(),
+      organizationUnitCode: Joi.string().required(),
+      period: Joi.string().required(),
+    }),
+  ),
+});
+
 interface DataElementValue {
   value: number;
   dataElementCode: string;
@@ -76,8 +90,8 @@ export class DataElementsController {
     else return undefined;
   }
 
-  pushToQueue(migrationId: number | undefined): void {
-    const host = process.env.DIM_QUEUE_HOST || 'amqp://localhost';
+  pushToMigrationQueue(migrationId: number | undefined): void {
+    const host = process.env.DIM_MIGRATION_QUEUE_HOST || 'amqp://localhost';
 
     amqp.connect(
       host,
@@ -91,13 +105,45 @@ export class DataElementsController {
           };
 
           const queueName =
-            process.env.DIM_QUEUE_NAME || 'INTERGRATION_MEDIATOR';
+            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTERGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
           const message = JSON.stringify({migrationId});
           ch.sendToQueue(queueName, new Buffer(message), {persistent: true});
-          console.log(`[x] Sent ${message}`);
+          console.log(`Sent ${message}`);
 
+          setTimeout(() => conn.close(), 500);
+        });
+      },
+    );
+  }
+
+  pushToEmailQueue(
+    migrationId: number | undefined,
+    email: string,
+    flag: boolean,
+  ): void {
+    const host = process.env.DIM_EMAIL_QUEUE_HOST || 'amqp://localhost';
+
+    amqp.connect(
+      host,
+      function(err: any, conn: any): void {
+        if (err) console.log(err);
+        conn.createChannel(function(err: any, ch: any) {
+          if (err) console.log(err);
+
+          const options = {
+            durable: true,
+          };
+
+          const queueName =
+            process.env.DIM_EMAIL_QUEUE_NAME ||
+            'DHIS2_EMAIL_INTERGRATION_QUEUE';
+
+          ch.assertQueue(queueName, options);
+          const message = JSON.stringify({migrationId, email, flag});
+          ch.sendToQueue(queueName, new Buffer(message), {persistent: true});
+          console.log(`[x] Sent ${message}`);
           setTimeout(() => conn.close(), 500);
         });
       },
@@ -107,54 +153,69 @@ export class DataElementsController {
   async authenticate(
     clientId: string | undefined,
     data: PostObject,
+    migration: Migration | null,
   ): Promise<void> {
-    const client: number | undefined = await this.findClientId(clientId);
-
-    const {values} = data;
-
-    const migration: Migration | null = await this.migrationRepository.create({
-      clientId: client,
-    });
-
-    const elementsFailedAuthorization: DataElementValue[] = [];
-
-    for (const row of values) {
-      ///  update firebase on status
-      const {dataElementCode, value, organizationUnitCode, period} = row;
-      let migrationDataElement: any = {
-        organizationUnitCode,
-      };
-
-      if (migration) {
-        migrationDataElement.migrationId = migration.id;
-      }
-
-      migrationDataElement.value = value;
-
-      const where = {dataElementId: dataElementCode};
-
-      const dataElement: DataElement | null = await this.dataElementRepository.findOne(
-        {where},
-      );
-
-      if (dataElement) {
-        migrationDataElement.dataElementId = dataElement.id;
-        migrationDataElement.isElementAuthorized = true;
-        migrationDataElement.isValueValid = true;
-        migrationDataElement.isProcessed = false;
-        migrationDataElement.period = period;
-        await this.migrationDataElementsRepository.create(migrationDataElement);
-      } else {
-        elementsFailedAuthorization.push(row);
-        // TODO: terminate if element is not authorized
-      }
-      console.log(elementsFailedAuthorization);
-    }
-
-    // for  email unauthorized elements
-    // trigger queue
     if (migration) {
-      await this.pushToQueue(migration.id);
+      const {values} = data;
+      let flag: boolean = false;
+
+      for (const row of values) {
+        const {dataElementCode, value, organizationUnitCode, period} = row;
+
+        let migrationDataElement: any = {
+          organizationUnitCode,
+          migrationId: migration.id,
+        };
+
+        migrationDataElement.value = value;
+        const where = {dataElementId: dataElementCode};
+        const dataElement: DataElement | null = await this.dataElementRepository.findOne(
+          {where},
+        );
+
+        if (dataElement) {
+          migrationDataElement.dataElementId = dataElement.id;
+          migrationDataElement.isElementAuthorized = true;
+          migrationDataElement.isValueValid = true;
+          migrationDataElement.isProcessed = false;
+          migrationDataElement.period = period;
+
+          migrationDataElement = await this.migrationDataElementsRepository.create(
+            migrationDataElement,
+          );
+
+          if (!migrationDataElement)
+            console.log(
+              `element "${
+                dataElement.dataElementName
+              }" was not uploaded to the database`,
+            );
+          else
+            console.log(
+              `element "${
+                dataElement.dataElementName
+              }" is added successfully to the database`,
+            );
+        } else {
+          flag = true;
+        }
+      }
+
+      if (!flag) {
+        migration.elementsAuthorizationAt = new Date(Date.now());
+        await this.migrationRepository
+          .update(migration)
+          .catch(err => console.log(err));
+        await this.pushToMigrationQueue(migration.id);
+        await this.pushToEmailQueue(migration.id, 'mmalumbo@gmail.com', flag);
+      } else {
+        migration.elementsFailedAuthorizationAt = new Date(Date.now());
+        await this.migrationRepository
+          .update(migration)
+          .catch(err => console.log(err));
+      }
+    } else {
+      console.log('Invalid migration');
     }
   }
 
@@ -167,30 +228,25 @@ export class DataElementsController {
     },
   })
   async create(@requestBody() data: PostObject): Promise<any> {
-    const schema: object = Joi.object().keys({
-      description: Joi.string()
-        .min(3)
-        .required(),
-      values: Joi.array().items(
-        Joi.object().keys({
-          value: Joi.number().required(),
-          dataElementCode: Joi.string().required(),
-          organizationUnitCode: Joi.string().required(),
-          period: Joi.string().required(),
-        }),
-      ),
-    });
-
     const {error} = Joi.validate(data, schema);
 
     if (error) {
-      const errorMessage = error.details[0].message;
-      await console.log(errorMessage);
-      return this.res.status(400).send(errorMessage);
+      await console.log(error.details[0].message);
+      return this.res.status(400).send(error.details[0].message);
     }
 
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
-    this.authenticate(clientId, data);
+    const client: number | undefined = await this.findClientId(clientId);
+
+    const date: Date = new Date(Date.now());
+
+    const migration: Migration | null = await this.migrationRepository.create({
+      clientId: client,
+      structureValidatedAt: date,
+      valuesValidatedAt: date,
+    });
+
+    this.authenticate(clientId, data, migration);
 
     this.res.status(202);
 
