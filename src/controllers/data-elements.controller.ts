@@ -105,11 +105,11 @@ export class DataElementsController {
           };
 
           const queueName =
-            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTERGRATION_MEDIATOR';
+            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({migrationId});
-          ch.sendToQueue(queueName, new Buffer(message), {persistent: true});
+          const message = JSON.stringify({ migrationId });
+          ch.sendToQueue(queueName, new Buffer(message), { persistent: true });
           console.log(`Sent ${message}`);
 
           setTimeout(() => conn.close(), 500);
@@ -127,9 +127,9 @@ export class DataElementsController {
 
     amqp.connect(
       host,
-      function(err: any, conn: any): void {
+      function (err: any, conn: any): void {
         if (err) console.log(err);
-        conn.createChannel(function(err: any, ch: any) {
+        conn.createChannel(function (err: any, ch: any) {
           if (err) console.log(err);
 
           const options = {
@@ -141,8 +141,8 @@ export class DataElementsController {
             'DHIS2_EMAIL_INTERGRATION_QUEUE';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({migrationId, email, flag});
-          ch.sendToQueue(queueName, new Buffer(message), {persistent: true});
+          const message = JSON.stringify({ migrationId, email, flag });
+          ch.sendToQueue(queueName, new Buffer(message), { persistent: true });
           console.log(`[x] Sent ${message}`);
           setTimeout(() => conn.close(), 500);
         });
@@ -156,11 +156,11 @@ export class DataElementsController {
     migration: Migration | null,
   ): Promise<void> {
     if (migration) {
-      const {values} = data;
+      const { values } = data;
       let flag: boolean = false;
 
       for (const row of values) {
-        const {dataElementCode, value, organizationUnitCode, period} = row;
+        const { dataElementCode, value, organizationUnitCode, period } = row;
 
         let migrationDataElement: any = {
           organizationUnitCode,
@@ -168,9 +168,9 @@ export class DataElementsController {
         };
 
         migrationDataElement.value = value;
-        const where = {dataElementId: dataElementCode};
+        const where = { dataElementId: dataElementCode };
         const dataElement: DataElement | null = await this.dataElementRepository.findOne(
-          {where},
+          { where },
         );
 
         if (dataElement) {
@@ -188,13 +188,13 @@ export class DataElementsController {
           if (!migrationDataElement)
             console.log(
               `element "${
-                dataElement.dataElementName
+              dataElement.dataElementName
               }" was not uploaded to the database`,
             );
           else
             console.log(
               `element "${
-                dataElement.dataElementName
+              dataElement.dataElementName
               }" is added successfully to the database`,
             );
         } else {
@@ -229,7 +229,7 @@ export class DataElementsController {
     },
   })
   async create(@requestBody() data: PostObject): Promise<any> {
-    const {error} = Joi.validate(data, schema);
+    const { error } = Joi.validate(data, schema);
 
     if (error) {
       await console.log(error.details[0].message);
