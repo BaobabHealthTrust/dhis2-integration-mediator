@@ -96,7 +96,6 @@ export class DataElementsController {
           const message = JSON.stringify({ migrationId });
           ch.sendToQueue(queueName, new Buffer(message), { persistent: true });
           console.log(`[x] Sent ${message}`);
-
           setTimeout(() => conn.close(), 500);
         });
       },
@@ -141,6 +140,7 @@ export class DataElementsController {
         migrationDataElement.isElementAuthorized = true;
         migrationDataElement.isValueValid = true;
         migrationDataElement.isProcessed = false;
+        migrationDataElement.isMigrated = false;
         migrationDataElement.period = period;
         await this.migrationDataElementsRepository.create(migrationDataElement);
       } else {
@@ -321,12 +321,12 @@ export class DataElementsController {
               code: 'code',
               display: 'display',
             },
-            telecom: rawOrganisationUnit.phoneNumber && [
+            telecom: [
               {
                 system: 'phonenumber',
-                value: rawOrganisationUnit.phoneNumber,
+                value: rawOrganisationUnit.phoneNumber || null,
               },
-            ] || '',
+            ],
             address: {
               line: [rawOrganisationUnit.address],
             },
