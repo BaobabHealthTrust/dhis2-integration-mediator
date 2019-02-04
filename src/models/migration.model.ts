@@ -50,16 +50,19 @@ export class Migration extends Entity {
 
   @property({
     type: 'number',
+    default: 0,
   })
   totalMigratedElements?: number;
 
   @property({
     type: 'number',
+    default: 0,
   })
   totalDataElements?: number;
 
   @property({
     type: 'number',
+    default: 0,
   })
   totalFailedElements?: number;
 

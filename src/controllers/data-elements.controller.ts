@@ -35,11 +35,11 @@ import {
   ResponseObject,
 } from '@loopback/rest';
 
-import {inject} from '@loopback/context';
+import { inject } from '@loopback/context';
 
 const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
-const {buildReturnObject} = require('@kuunika/openhim-util');
+const { buildReturnObject } = require('@kuunika/openhim-util');
 
 const schema: object = Joi.object().keys({
   description: Joi.string()
@@ -83,13 +83,13 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
-  ) {}
+  ) { }
 
   async findClientId(
     clientId: string | undefined,
   ): Promise<number | undefined> {
-    const where = {name: clientId};
-    const client: Client | null = await this.clientRepository.findOne({where});
+    const where = { name: clientId };
+    const client: Client | null = await this.clientRepository.findOne({ where });
     if (client) return client.id;
     else return undefined;
   }
@@ -99,9 +99,9 @@ export class DataElementsController {
 
     amqp.connect(
       host,
-      function(err: any, conn: any): void {
+      function (err: any, conn: any): void {
         if (err) console.log(err);
-        conn.createChannel(function(err: any, ch: any) {
+        conn.createChannel(function (err: any, ch: any) {
           if (err) console.log(err);
 
           const options = {
@@ -112,7 +112,7 @@ export class DataElementsController {
             process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({migrationId});
+          const message = JSON.stringify({ migrationId });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
@@ -133,9 +133,9 @@ export class DataElementsController {
 
     amqp.connect(
       host,
-      function(err: any, conn: any): void {
+      function (err: any, conn: any): void {
         if (err) console.log(err);
-        conn.createChannel(function(err: any, ch: any) {
+        conn.createChannel(function (err: any, ch: any) {
           if (err) console.log(err);
 
           const options = {
@@ -144,10 +144,10 @@ export class DataElementsController {
 
           const queueName =
             process.env.DIM_EMAIL_QUEUE_NAME ||
-            'DHIS2_EMAIL_INTERGRATION_QUEUE';
+            'DHIS2_EMAIL_INTEGRATION_QUEUE';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({migrationId, email, flag});
+          const message = JSON.stringify({ migrationId, email, flag });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
@@ -164,11 +164,11 @@ export class DataElementsController {
     migration: Migration | null,
   ): Promise<void> {
     if (migration) {
-      const {values = []} = data;
+      const { values = [] } = data;
       let flag: boolean = false;
 
       for (const row of values) {
-        const {dataElementCode, value, organizationUnitCode, period} = row;
+        const { dataElementCode, value, organizationUnitCode, period } = row;
 
         let migrationDataElement: any = {
           organizationUnitCode,
@@ -176,9 +176,9 @@ export class DataElementsController {
         };
 
         migrationDataElement.value = value;
-        const where = {dataElementId: dataElementCode};
+        const where = { dataElementId: dataElementCode };
         const dataElement: DataElement | null = await this.dataElementRepository.findOne(
-          {where},
+          { where },
         );
 
         if (dataElement) {
@@ -196,13 +196,13 @@ export class DataElementsController {
           if (!migrationDataElement)
             console.log(
               `element "${
-                dataElement.dataElementName
+              dataElement.dataElementName
               }" was not uploaded to the database`,
             );
           else
             console.log(
               `element "${
-                dataElement.dataElementName
+              dataElement.dataElementName
               }" is added successfully to the database`,
             );
         } else {
@@ -233,7 +233,7 @@ export class DataElementsController {
     responses: {
       '200': {
         description: 'Post data element values',
-        content: {'application/json': {schema: {'x-ts-type': ArrayType}}},
+        content: { 'application/json': { schema: { 'x-ts-type': ArrayType } } },
       },
     },
   })
@@ -241,10 +241,10 @@ export class DataElementsController {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     const client: number | undefined = await this.findClientId(clientId);
 
-    const {error} = Joi.validate(data, schema);
+    const { error } = Joi.validate(data, schema);
 
     if (error) {
-      const {values = []} = data;
+      const { values = [] } = data;
       await this.migrationRepository.create({
         clientId: client,
         structureFailedValidationAt: new Date(Date.now()),
@@ -295,7 +295,7 @@ export class DataElementsController {
   ): Promise<any> {
     const orchestrations: Array<object> = [];
 
-    const properties: object = {property: 'Primary Route'};
+    const properties: object = { property: 'Primary Route' };
 
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
 
@@ -304,7 +304,7 @@ export class DataElementsController {
     const client: number | undefined = await this.findClientId(clientId);
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({
-        where: {clientId: client},
+        where: { clientId: client },
       });
       if (dataSet) {
         //TODO: Query not being processed
@@ -312,7 +312,7 @@ export class DataElementsController {
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
-            dataElementName: {like: `%${name}%`},
+            dataElementName: { like: `%${name}%` },
           },
           skip,
           limit,
@@ -352,7 +352,7 @@ export class DataElementsController {
     const response = await axios({
       url: `${
         process.env.DHIS2_URL
-      }/organisationUnits.json?paging=false&fields=id,name,description,description,coordinates,shortName,phoneNumber,address&level=4`,
+        }/organisationUnits.json?paging=false&fields=id,name,description,description,coordinates,shortName,phoneNumber,address&level=4`,
       method: 'get',
       withCredentials: true,
       auth: {
