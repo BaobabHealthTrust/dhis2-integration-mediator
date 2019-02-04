@@ -109,7 +109,7 @@ export class DataElementsController {
           };
 
           const queueName =
-            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTERGRATION_MEDIATOR';
+            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
           const message = JSON.stringify({migrationId});
