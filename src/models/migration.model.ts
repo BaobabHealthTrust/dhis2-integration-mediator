@@ -11,7 +11,7 @@ export class Migration extends Entity {
   @property({
     type: 'date',
   })
-  uploadedAt?: string;
+  uploadedAt?: Date;
 
   @property({
     type: 'date',
