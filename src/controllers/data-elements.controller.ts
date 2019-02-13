@@ -238,6 +238,8 @@ export class DataElementsController {
     },
   })
   async create(@requestBody() data: PostObject): Promise<any> {
+
+    //TODO: Could go in the client repository
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     const client: number | undefined = await this.findClientId(clientId);
 
@@ -245,6 +247,7 @@ export class DataElementsController {
 
     if (error) {
       const { values = [] } = data;
+      //TODO: could go into repo, requiring client and number of elements  i.e persistError()
       await this.migrationRepository.create({
         clientId: client,
         structureFailedValidationAt: new Date(Date.now()),
@@ -254,12 +257,13 @@ export class DataElementsController {
         totalDataElements: values.length,
       });
 
-      await console.log(error.details[0].message);
+      // await console.log(error.details[0].message);
       return this.res.status(400).send(error.details[0].message);
     }
 
     const date: Date = new Date(Date.now());
 
+    // TODO: could go in repo and be startMigration()
     const migration: Migration | null = await this.migrationRepository.create({
       clientId: client,
       structureValidatedAt: date,
@@ -268,6 +272,7 @@ export class DataElementsController {
       totalDataElements: data.values.length,
     });
 
+    //TODO: rename function to checkMigrationReadiness()  in repo
     this.authenticate(clientId, data, migration);
 
     this.res.status(202);
@@ -293,10 +298,6 @@ export class DataElementsController {
     @param.query.number('skip') skip = 0,
     @param.query.string('name') name = '',
   ): Promise<any> {
-    const orchestrations: Array<object> = [];
-
-    const properties: object = { property: 'Primary Route' };
-
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
 
     let dataElements: Array<DataElement> = [];
@@ -307,8 +308,9 @@ export class DataElementsController {
         where: { clientId: client },
       });
       if (dataSet) {
-        //TODO: Query not being processed
         const where = new WhereBuilder().eq('dataSetId', dataSet.id).build();
+
+        //TODO: filter by name or code
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
@@ -348,6 +350,7 @@ export class DataElementsController {
       },
     },
   })
+  //TODO: narrow down based on search param
   async organisationUnits(): Promise<any> {
     const response = await axios({
       url: `${
@@ -364,17 +367,15 @@ export class DataElementsController {
     const rawOrganisationUnits = response.data.organisationUnits;
 
     const organisationUnits = {
-      resourceType: 'Location',
-      code: 'string',
+      resourceType: 'Bundle',
+      type: 'collection',
       timestamp: Date.now(),
       total: rawOrganisationUnits.length,
-      link: [
-        {
-          relation: 'string',
-          url: 'string',
-        },
-      ],
       entry: rawOrganisationUnits.map((rawOrganisationUnit: any) => {
+
+        //TODO: install babel optiona chaining to refactor this code
+        //const coordinates = orgunits?.cordinates.slice(1,-1).split(',) || ['0','0']
+        //conts [lat, long] = coordinates
         let [latitude, longitude] = [0, 0];
         if (rawOrganisationUnit.coordinates) {
           [latitude, longitude] = rawOrganisationUnit.coordinates
@@ -393,11 +394,6 @@ export class DataElementsController {
             ],
             name: rawOrganisationUnit.name,
             alias: [rawOrganisationUnit.shortName || rawOrganisationUnit.name],
-            operationalStatus: {
-              system: 'dhis2',
-              code: 'code',
-              display: 'display',
-            },
             telecom: [
               {
                 system: 'phonenumber',

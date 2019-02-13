@@ -1,12 +1,12 @@
 import {MediatorApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
-import {format} from 'url';
 export {MediatorApplication};
 const medUtils = require('openhim-mediator-utils');
 const {registerMediator} = require('@kuunika/kupiga');
 
 require('dotenv').config();
 const {api, register} = require('config');
+
 import * as mediatorConfig from '../config/mediator.json';
 
 export async function main(options: ApplicationConfig = {}) {
