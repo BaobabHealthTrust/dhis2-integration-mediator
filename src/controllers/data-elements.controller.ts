@@ -36,6 +36,9 @@ import {
 } from '@loopback/rest';
 
 import { inject } from '@loopback/context';
+import { Logger } from '../utils/logger';
+
+const uuidv4 = require('uuid/v4');
 
 const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
@@ -71,6 +74,8 @@ interface PostObject {
 }
 
 export class DataElementsController {
+  private logger: any;
+  private channelId: string;
   constructor(
     @inject(RestBindings.Http.REQUEST) private req: Request,
     @inject(RestBindings.Http.RESPONSE) private res: Response,
@@ -83,7 +88,14 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
-  ) { }
+  ) {
+    //Log only for post requests
+    if (req.method.toLocaleLowerCase() === 'post') {
+      this.channelId = uuidv4();
+      this.logger = new Logger(this.channelId);
+      this.logger.info('dude');
+    }
+  }
 
   async findClientId(
     clientId: string | undefined,
@@ -151,14 +163,14 @@ export class DataElementsController {
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
-          console.log(`[x] Sent ${message}`);
+          this.logger.info(`[x] Sent ${message}`);
           setTimeout(() => conn.close(), 500);
         });
       },
     );
   }
 
-  async authenticate(
+  async checkMigrationReadiness(
     clientId: string | undefined,
     data: PostObject,
     migration: Migration | null,
@@ -194,13 +206,11 @@ export class DataElementsController {
           );
 
           if (!migrationDataElement)
-            console.log(
-              `element "${
+            this.logger.info(`element "${
               dataElement.dataElementName
-              }" was not uploaded to the database`,
-            );
+              }" was not uploaded to the database`);
           else
-            console.log(
+            this.logger.info(
               `element "${
               dataElement.dataElementName
               }" is added successfully to the database`,
@@ -212,20 +222,25 @@ export class DataElementsController {
       }
 
       if (!flag) {
+        this.logger.info('Data elements passed validationg')
+
         migration.elementsAuthorizationAt = new Date(Date.now());
         await this.migrationRepository
           .update(migration)
-          .catch(err => console.log(err));
+          .catch(err => this.logger.error(err));
         await this.pushToMigrationQueue(migration.id);
+        this.logger.info('Passing payload to migration queue')
       } else {
+        this.logger.info('Data elements failed validationg')
         migration.elementsFailedAuthorizationAt = new Date(Date.now());
         await this.migrationRepository
           .update(migration)
-          .catch(err => console.log(err));
+          .catch(err => this.logger.error(err));
+        this.logger.info('Data elements sending email to client')
         await this.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag);
       }
     } else {
-      console.log('Invalid migration');
+      this.logger.info('Invalid migration')
     }
   }
 
@@ -238,14 +253,17 @@ export class DataElementsController {
     },
   })
   async create(@requestBody() data: PostObject): Promise<any> {
-
     //TODO: Could go in the client repository
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     const client: number | undefined = await this.findClientId(clientId);
 
+    this.logger.info('Validating payload structure')
+
     const { error } = Joi.validate(data, schema);
 
     if (error) {
+      this.logger.info('Payload structure failed validation, terminating migration')
+
       const { values = [] } = data;
       //TODO: could go into repo, requiring client and number of elements  i.e persistError()
       await this.migrationRepository.create({
@@ -260,6 +278,7 @@ export class DataElementsController {
       // await console.log(error.details[0].message);
       return this.res.status(400).send(error.details[0].message);
     }
+    this.logger.info('Payload structure passed validation')
 
     const date: Date = new Date(Date.now());
 
@@ -272,14 +291,18 @@ export class DataElementsController {
       totalDataElements: data.values.length,
     });
 
+    this.logger.info('Validating data elements')
+
     //TODO: rename function to checkMigrationReadiness()  in repo
-    this.authenticate(clientId, data, migration);
+    this.checkMigrationReadiness(clientId, data, migration);
 
     this.res.status(202);
 
+    this.logger.info('Sendind feedback on reciept to client');
+
     return {
       message: 'Payload recieved successfully',
-      notificationsChannel: 'rb34512',
+      notificationsChannel: this.channelId,
     };
   }
 
@@ -413,7 +436,7 @@ export class DataElementsController {
     };
 
     this.res.set('Content-Type', 'application/json');
-
+    this.logger.error(`Total ${organisationUnits.total}`);
     return this.res.json(organisationUnits);
   }
 }

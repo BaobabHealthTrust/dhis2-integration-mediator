@@ -61,7 +61,9 @@
     "joi": "^14.3.1",
     "loopback-connector-mysql": "^5.3.1",
     "openhim-mediator-utils": "^0.2.3",
-    "ts-node": "^7.0.1"
+    "ts-node": "^7.0.1",
+    "uuid": "^3.3.2",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "@loopback/build": "^1.0.1",
