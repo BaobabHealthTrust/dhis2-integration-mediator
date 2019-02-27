@@ -25,7 +25,7 @@ export class OrganisationUnitsController {
   @get('/dhis2/organisation-units', {
     responses: {
       '200': {
-        description: 'Get all organisation units from dhis',
+        description: 'Get all organisation units from dhis2',
         content: {
           'application/json': {},
         },
