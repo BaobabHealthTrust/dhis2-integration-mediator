@@ -4,6 +4,8 @@ import {
   Response,
   get,
   ResponseObject,
+  param,
+  RawBodyParser
 } from '@loopback/rest';
 import { inject } from '@loopback/context';
 
@@ -31,7 +33,9 @@ export class OrganisationUnitsController {
     },
   })
   //TODO: narrow down based on search param
-  async organisationUnits(): Promise<any> {
+  async organisationUnits(
+    @param.query.string('name') name = '',
+  ): Promise<any> {
     const response = await axios({
       url: `${
         process.env.DHIS2_URL
@@ -44,7 +48,9 @@ export class OrganisationUnitsController {
       },
     });
 
-    const rawOrganisationUnits = response.data.organisationUnits;
+    const rawOrganisationUnits = response.data.organisationUnits.filter((organisationUnit: any) => (
+      organisationUnit.name.toLowerCase().includes(name.toLowerCase())
+    ));
 
     const organisationUnits = {
       resourceType: 'Bundle',

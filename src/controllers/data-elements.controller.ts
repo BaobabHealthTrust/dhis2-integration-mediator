@@ -91,7 +91,6 @@ export class DataElementsController {
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
       this.logger = new Logger(this.channelId);
-      this.logger.info('dude');
     }
   }
 
@@ -215,7 +214,6 @@ export class DataElementsController {
               }" is added successfully to the database`,
             );
         } else {
-          console.log(`someone failed`);
           flag = true;
           break;
         }
