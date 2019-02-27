@@ -87,6 +87,7 @@ export class DataElementsController {
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
   ) {
+    console.log('got here');
     //Log only for post requests
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
@@ -161,7 +162,8 @@ export class DataElementsController {
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
-          this.logger.info(`[x] Sent ${message}`);
+          //TODO: find a way to configure logger
+          console.log(`[x] Sent ${message}`);
           setTimeout(() => conn.close(), 500);
         });
       },
@@ -214,6 +216,7 @@ export class DataElementsController {
               }" is added successfully to the database`,
             );
         } else {
+          console.log(`someone failed`);
           flag = true;
           break;
         }
@@ -225,7 +228,9 @@ export class DataElementsController {
         migration.elementsAuthorizationAt = new Date(Date.now());
         await this.migrationRepository
           .update(migration)
-          .catch(err => this.logger.error(err));
+          .catch(function (err) {
+            this.logger.error(err)
+          });
         await this.pushToMigrationQueue(migration.id);
         this.logger.info('Passing payload to migration queue')
       } else {
@@ -233,7 +238,9 @@ export class DataElementsController {
         migration.elementsFailedAuthorizationAt = new Date(Date.now());
         await this.migrationRepository
           .update(migration)
-          .catch(err => this.logger.error(err));
+          .catch(function (err) {
+            this.logger.error(err)
+          });
         this.logger.info('Data elements sending email to client')
         await this.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag);
       }
