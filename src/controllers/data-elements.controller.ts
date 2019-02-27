@@ -87,7 +87,6 @@ export class DataElementsController {
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
   ) {
-    console.log('got here');
     //Log only for post requests
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
