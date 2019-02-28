@@ -139,7 +139,6 @@ export class DataElementsController {
     flag: boolean,
   ): void {
     const host = process.env.DIM_EMAIL_QUEUE_HOST || 'amqp://localhost';
-    const source = "mediator";
 
     amqp.connect(
       host,
@@ -157,6 +156,8 @@ export class DataElementsController {
             'DHIS2_EMAIL_INTEGRATION_QUEUE';
 
           ch.assertQueue(queueName, options);
+
+          const source = "mediator"
           const message = JSON.stringify({ migrationId, email, flag, source });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
