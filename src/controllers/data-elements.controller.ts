@@ -103,7 +103,7 @@ export class DataElementsController {
     else return undefined;
   }
 
-  pushToMigrationQueue(migrationId: number | undefined): void {
+  pushToMigrationQueue(migrationId: number | undefined, channelId: string): void {
     const host = process.env.DIM_MIGRATION_QUEUE_HOST || 'amqp://localhost';
 
     amqp.connect(
@@ -121,7 +121,7 @@ export class DataElementsController {
             process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({ migrationId });
+          const message = JSON.stringify({ migrationId, channelId });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
@@ -137,6 +137,7 @@ export class DataElementsController {
     migrationId: number | undefined,
     email: string,
     flag: boolean,
+    channelId: string
   ): void {
     const host = process.env.DIM_EMAIL_QUEUE_HOST || 'amqp://localhost';
 
@@ -158,7 +159,7 @@ export class DataElementsController {
           ch.assertQueue(queueName, options);
 
           const source = "mediator"
-          const message = JSON.stringify({ migrationId, email, flag, source });
+          const message = JSON.stringify({ migrationId, email, flag, source, channelId });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
@@ -230,7 +231,7 @@ export class DataElementsController {
           .catch(function (err) {
             this.logger.error(err)
           });
-        await this.pushToMigrationQueue(migration.id);
+        await this.pushToMigrationQueue(migration.id, this.channelId);
         this.logger.info('Passing payload to migration queue')
       } else {
         this.logger.info('Data elements failed validationg')
@@ -241,7 +242,7 @@ export class DataElementsController {
             this.logger.error(err)
           });
         this.logger.info('Data elements sending email to client')
-        await this.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag);
+        await this.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag, this.channelId);
       }
     } else {
       this.logger.info('Invalid migration')
