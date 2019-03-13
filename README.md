@@ -54,8 +54,18 @@ source data/schema.sql;
 # exist from mysql
 \q
 ```
+### step 4: database configuration
 
-### step 4: environmental variables
+Create a `mysql.datasource.json` file with the contents of your mysql.datasource.example.json file.
+
+```sh
+# copy the .env.example to .env file
+cp src/datasources/mysql.datasource.example.json src/datasources/mysql.datasource.json
+```
+
+Modify the `mysql.datasource.json` file and make sure it reflects your database configurations.
+
+### step 5: environmental variables
 
 Create a `.env` file with the contents of your .env.example file.
 
@@ -66,7 +76,7 @@ cp .env.example .env
 
 Modify the `.env` file and make sure it reflects the environment settings.
 
-### step 5: start the work
+### step 6: start the work
 
 __NB: This step requires your instance on the OpenHIM to be running__
 
