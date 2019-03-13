@@ -1,8 +1,7 @@
-import { Logger } from './logger';
 const axios = require('axios');
 
-export async function validateOrganizationUnits(payload: any[]) {
-  const dhis2OrgUnits = await axios({
+export async function validateOrganizationUnits(ids: string[]) {
+  const response = await (axios({
     method: 'get',
     url: `${
       process.env.DHIS2_URL
@@ -11,5 +10,7 @@ export async function validateOrganizationUnits(payload: any[]) {
       username: process.env.DHIS2_USERNAME,
       password: process.env.DHIS2_PASSWORD
     }
-  });
+  }).catch((err: Error) => console.log(err.message)));
+  console.log(response);
+  return true;
 }

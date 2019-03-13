@@ -20,7 +20,7 @@
     "tslint": "echo \"linting\"",
     "tslint:fix": "npm run tslint -- --fix",
     "pretest": "npm run clean && npm run build",
-    "test": "lb-mocha --allow-console-logs \"dist/test\"",
+    "test": "lb-mocha --allow-console-logs --timeout 15000 \"dist/test\"",
     "posttest": "npm run lint",
     "test:dev": "lb-mocha --allow-console-logs dist/test/**/*.js && npm run posttest",
     "prestart": "npm run build",
@@ -58,6 +58,7 @@
     "joi": "^14.3.1",
     "loopback-connector-mysql": "^5.3.1",
     "openhim-mediator-utils": "^0.2.3",
+    "pusher": "^2.2.0",
     "ts-node": "^7.0.1",
     "uuid": "^3.3.2",
     "winston": "^3.2.1"
