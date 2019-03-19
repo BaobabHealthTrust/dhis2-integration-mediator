@@ -1,8 +1,6 @@
 import {
   repository,
-  Filter,
   ArrayType,
-  Where,
   WhereBuilder,
 } from '@loopback/repository';
 import {
@@ -18,7 +16,6 @@ import {
   DataSet,
   DataElement,
   Migration,
-  MigrationDataElements,
 } from '../models';
 
 import {
@@ -28,9 +25,7 @@ import {
   RestBindings,
   Response,
   requestBody,
-  getFilterSchemaFor,
   param,
-  ResponseObject,
 } from '@loopback/rest';
 
 import { inject } from '@loopback/context';
@@ -40,7 +35,6 @@ const uuidv4 = require('uuid/v4');
 
 const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
-const { buildReturnObject } = require('@kuunika/openhim-util');
 
 const schema: object = Joi.object().keys({
   description: Joi.string()
@@ -163,7 +157,6 @@ export class DataElementsController {
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
-          //TODO: find a way to configure logger
           console.log(`[x] Sent ${message}`);
           setTimeout(() => conn.close(), 500);
         });
@@ -367,81 +360,4 @@ export class DataElementsController {
 
     return this.res.json(returnObject);
   }
-
-  // @get('/dhis2/organisation-units', {
-  //   responses: {
-  //     '200': {
-  //       description: 'Get all organisation units from dhis'e,
-  //       content: {
-  //         'application/json': {},
-  //       },
-  //     },
-  //   },
-  // })
-  // //TODO: narrow down based on search param
-  // async organisationUnits(): Promise<any> {
-  //   const response = await axios({
-  //     url: `${
-  //       process.env.DHIS2_URL
-  //       }/organisationUnits.json?paging=false&fields=id,name,description,description,coordinates,shortName,phoneNumber,address&level=4`,
-  //     method: 'get',
-  //     withCredentials: true,
-  //     auth: {
-  //       username: `${process.env.DHIS2_USERNAME}`,
-  //       password: `${process.env.DHIS2_PASSWORD}`,
-  //     },
-  //   });
-
-  //   const rawOrganisationUnits = response.data.organisationUnits;
-
-  //   const organisationUnits = {
-  //     resourceType: 'Bundle',
-  //     type: 'collection',
-  //     timestamp: Date.now(),
-  //     total: rawOrganisationUnits.length,
-  //     entry: rawOrganisationUnits.map((rawOrganisationUnit: any) => {
-
-  //       //TODO: install babel optiona chaining to refactor this code
-  //       //const coordinates = orgunits?.cordinates.slice(1,-1).split(',) || ['0','0']
-  //       //conts [lat, long] = coordinates
-  //       let [latitude, longitude] = [0, 0];
-  //       if (rawOrganisationUnit.coordinates) {
-  //         [latitude, longitude] = rawOrganisationUnit.coordinates
-  //           .slice(1, -1)
-  //           .split(',');
-  //       }
-
-  //       return {
-  //         fullUrl: process.env.DHIS2_URL,
-  //         resource: {
-  //           resourceType: 'Location',
-  //           identifier: [
-  //             {
-  //               value: rawOrganisationUnit.id,
-  //             },
-  //           ],
-  //           name: rawOrganisationUnit.name,
-  //           alias: [rawOrganisationUnit.shortName || rawOrganisationUnit.name],
-  //           telecom: [
-  //             {
-  //               system: 'phonenumber',
-  //               value: rawOrganisationUnit.phoneNumber || null,
-  //             },
-  //           ],
-  //           address: {
-  //             line: [rawOrganisationUnit.address],
-  //           },
-  //           position: {
-  //             latitude,
-  //             longitude,
-  //           },
-  //         },
-  //       };
-  //     }),
-  //   };
-
-  //   this.res.set('Content-Type', 'application/json');
-  //   this.logger.error(`Total ${organisationUnits.total}`);
-  //   return this.res.json(organisationUnits);
-  // }
 }
