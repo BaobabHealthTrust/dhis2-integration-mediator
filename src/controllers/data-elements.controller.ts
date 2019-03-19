@@ -29,10 +29,10 @@ import {
 } from '@loopback/rest';
 
 import { inject } from '@loopback/context';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils';
+import { PostObject } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
-
 const Joi = require('joi');
 const amqp = require('amqplib/callback_api');
 
@@ -54,17 +54,6 @@ const schema: object = Joi.object().keys({
     .required(),
 });
 
-interface DataElementValue {
-  value: number;
-  dataElementCode: string;
-  organizationUnitCode: string;
-  period: string;
-}
-interface PostObject {
-  description: string;
-  values: Array<DataElementValue>;
-}
-
 export class DataElementsController {
   private logger: any;
   private channelId: string;
@@ -81,87 +70,10 @@ export class DataElementsController {
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
   ) {
-    //Log only for post requests
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
       this.logger = new Logger(this.channelId);
     }
-  }
-
-  async findClientId(
-    clientId: string | undefined,
-  ): Promise<number | undefined> {
-    const where = { name: clientId };
-    const client: Client | null = await this.clientRepository.findOne({ where });
-    if (client) return client.id;
-    else return undefined;
-  }
-
-  pushToMigrationQueue(migrationId: number | undefined, channelId: string): void {
-    const host = process.env.DIM_MIGRATION_QUEUE_HOST || 'amqp://localhost';
-
-    amqp.connect(
-      host,
-      function (err: any, conn: any): void {
-        if (err) console.log(err);
-        conn.createChannel(function (err: any, ch: any) {
-          if (err) console.log(err);
-
-          const options = {
-            durable: true,
-          };
-
-          const queueName =
-            process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
-
-          ch.assertQueue(queueName, options);
-          const message = JSON.stringify({ migrationId, channelId });
-          ch.sendToQueue(queueName, Buffer.from(message), {
-            persistent: true,
-          });
-          console.log(`Sent ${message}`);
-
-          setTimeout(() => conn.close(), 500);
-        });
-      },
-    );
-  }
-
-  pushToEmailQueue(
-    migrationId: number | undefined,
-    email: string,
-    flag: boolean,
-    channelId: string
-  ): void {
-    const host = process.env.DIM_EMAIL_QUEUE_HOST || 'amqp://localhost';
-
-    amqp.connect(
-      host,
-      function (err: any, conn: any): void {
-        if (err) console.log(err);
-        conn.createChannel(function (err: any, ch: any) {
-          if (err) console.log(err);
-
-          const options = {
-            durable: true,
-          };
-
-          const queueName =
-            process.env.DIM_EMAIL_QUEUE_NAME ||
-            'DHIS2_EMAIL_INTEGRATION_QUEUE';
-
-          ch.assertQueue(queueName, options);
-
-          const source = "mediator"
-          const message = JSON.stringify({ migrationId, email, flag, source, channelId });
-          ch.sendToQueue(queueName, Buffer.from(message), {
-            persistent: true,
-          });
-          console.log(`[x] Sent ${message}`);
-          setTimeout(() => conn.close(), 500);
-        });
-      },
-    );
   }
 
   async checkMigrationReadiness(
@@ -224,7 +136,7 @@ export class DataElementsController {
           .catch(function (err) {
             this.logger.error(err)
           });
-        await this.pushToMigrationQueue(migration.id, this.channelId);
+        await this.dataElementRepository.pushToMigrationQueue(migration.id, this.channelId);
         this.logger.info('Passing payload to migration queue')
       } else {
         this.logger.info('Data elements failed validationg')
@@ -235,7 +147,7 @@ export class DataElementsController {
             this.logger.error(err)
           });
         this.logger.info('Data elements sending email to client')
-        await this.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag, this.channelId);
+        await this.dataElementRepository.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag, this.channelId);
       }
     } else {
       this.logger.info('Invalid migration')
@@ -253,7 +165,7 @@ export class DataElementsController {
   async create(@requestBody() data: PostObject): Promise<any> {
     //TODO: Could go in the client repository
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
-    const client: number | undefined = await this.findClientId(clientId);
+    const client: number | undefined = await this.dataElementRepository.getClient(clientId);
 
     this.logger.info('Validating payload structure')
 
@@ -263,41 +175,19 @@ export class DataElementsController {
       this.logger.info('Payload structure failed validation, terminating migration')
 
       const { values = [] } = data;
-      //TODO: could go into repo, requiring client and number of elements  i.e persistError()
-      await this.migrationRepository.create({
-        clientId: client,
-        structureFailedValidationAt: new Date(Date.now()),
-        valuesFailedValidationAt: new Date(Date.now()),
-        elementsFailedAuthorizationAt: new Date(Date.now()),
-        uploadedAt: new Date(Date.now()),
-        totalDataElements: values.length,
-      });
 
-      // await console.log(error.details[0].message);
+      await this.migrationRepository.persistError(client, values.length);
+
       return this.res.status(400).send(error.details[0].message);
     }
     this.logger.info('Payload structure passed validation')
 
-    const date: Date = new Date(Date.now());
-
-    // TODO: could go in repo and be startMigration()
-    const migration: Migration | null = await this.migrationRepository.create({
-      clientId: client,
-      structureValidatedAt: date,
-      valuesValidatedAt: date,
-      uploadedAt: date,
-      totalDataElements: data.values.length,
-    });
-
+    const migration: Migration | null = await this.migrationRepository.startMigration(client, data.values.length);
     this.logger.info('Validating data elements')
 
-    //TODO: rename function to checkMigrationReadiness()  in repo
     this.checkMigrationReadiness(clientId, data, migration);
-
     this.res.status(202);
-
     this.logger.info('Sendind feedback on reciept to client');
-
     return {
       message: 'Payload recieved successfully',
       notificationsChannel: this.channelId,
@@ -323,7 +213,7 @@ export class DataElementsController {
 
     let dataElements: Array<DataElement> = [];
 
-    const client: number | undefined = await this.findClientId(clientId);
+    const client: number | undefined = await this.dataElementRepository.findClientId(clientId);
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({
         where: { clientId: client },

@@ -51,6 +51,7 @@
     "@loopback/rest": "^1.4.0",
     "@loopback/rest-explorer": "^1.1.2",
     "@loopback/service-proxy": "^1.0.3",
+    "@types/winston": "^2.4.4",
     "amqplib": "^0.5.3",
     "axios": "^0.18.0",
     "config": "^3.0.1",

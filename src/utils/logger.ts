@@ -3,7 +3,7 @@ import * as Pusher from 'pusher';
 
 const { createLogger, format, transports } = winston;
 
-class Logger {
+export class Logger {
   private _pusherLogger: Pusher;
   private _logger: any;
   private channelId: string = "dhis2-integration-channelId";
@@ -49,5 +49,3 @@ class Logger {
     this._logger.error(message)
   }
 }
-
-export { Logger };
