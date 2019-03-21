@@ -163,7 +163,6 @@ export class DataElementsController {
     },
   })
   async create(@requestBody() data: PostObject): Promise<any> {
-    //TODO: Could go in the client repository
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
 
