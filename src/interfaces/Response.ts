@@ -1,4 +1,4 @@
 export interface Response {
   message: string,
-  channelId: string
+  notificationsChannel: string
 }
