@@ -13,6 +13,7 @@ export class MigrationRepository extends DefaultCrudRepository<
     super(Migration, dataSource);
   }
 
+  // TODO: clientId will always be a number
   async persistError(clientId: number | undefined, totalDataElements: number) {
     await this.create({
       clientId,

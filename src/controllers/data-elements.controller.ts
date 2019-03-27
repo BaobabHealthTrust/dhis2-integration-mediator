@@ -76,6 +76,8 @@ export class DataElementsController {
     }
   }
 
+  //TODO: make it into a class check static, some logic be encapsulated in private method
+  //TODO: clientId will always be a string
   async checkMigrationReadiness(
     clientId: string | undefined,
     data: PostObject,
@@ -83,50 +85,51 @@ export class DataElementsController {
   ): Promise<void> {
     if (migration) {
       const { values = [] } = data;
+
+      //TODO: find a more expressive name
       let flag: boolean = false;
 
+      //TODO: rename to payload values
       for (const row of values) {
         const { dataElementCode, value, organizationUnitCode, period } = row;
 
-        let migrationDataElement: any = {
-          organizationUnitCode,
-          migrationId: migration.id,
-        };
-
-        migrationDataElement.value = value;
         const where = { dataElementId: dataElementCode };
         const dataElement: DataElement | null = await this.dataElementRepository.findOne(
           { where },
         );
 
-        if (dataElement) {
-          migrationDataElement.dataElementId = dataElement.id;
-          migrationDataElement.isElementAuthorized = true;
-          migrationDataElement.isValueValid = true;
-          migrationDataElement.isProcessed = false;
-          migrationDataElement.isMigrated = false;
-          migrationDataElement.period = period;
+        //TODO: think what to do when data element is null, possibly break 🙃
 
-          migrationDataElement = await this.migrationDataElementsRepository.create(
+
+        if (dataElement) {
+          const migrationDataElement: any = {
+            organizationUnitCode,
+            migrationId: migration.id,
+            value,
+            dataElementId: dataElement.id,
+            isElementAuthorized: true,
+            isValueValid: true,
+            isProcessed: false,
+            isMigrated: false,
+            period
+          };
+
+
+          const savedMigrationDataElement = await this.migrationDataElementsRepository.create(
             migrationDataElement,
           );
 
-          if (!migrationDataElement)
+          if (!savedMigrationDataElement)
             this.logger.info(`element "${
               dataElement.dataElementName
               }" was not uploaded to the database`);
           else
-            this.logger.info(
-              `element "${
-              dataElement.dataElementName
-              }" is added successfully to the database`,
-            );
+            this.logger.info(`element "${dataElement.dataElementName}" is added successfully to the database`);
         } else {
           flag = true;
           break;
         }
       }
-
       if (!flag) {
         this.logger.info('Data elements passed validationg')
 
@@ -162,9 +165,12 @@ export class DataElementsController {
       },
     },
   })
+  //TODO:  error response
   async create(@requestBody() data: PostObject): Promise<any> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
+    //TODO: Handle clientId undefined state send but response
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
+    //TODO: handle client undefined and respond fast
 
     this.logger.info('Validating payload structure')
 
@@ -181,12 +187,16 @@ export class DataElementsController {
     }
     this.logger.info('Payload structure passed validation')
 
+    //TODO: start migration to record start migration
     const migration: Migration | null = await this.migrationRepository.startMigration(client, data.values.length);
     this.logger.info('Validating data elements')
 
+    //TODO: if migration is null, terminate
     this.checkMigrationReadiness(clientId, data, migration);
     this.res.status(202);
     this.logger.info('Sendind feedback on reciept to client');
+
+    //TODO: type this response
     return {
       message: 'Payload recieved successfully',
       notificationsChannel: this.channelId,

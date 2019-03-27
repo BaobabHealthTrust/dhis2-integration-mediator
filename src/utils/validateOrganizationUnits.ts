@@ -1,7 +1,8 @@
 const axios = require('axios');
+const _ = require('lodash');
 
-export async function validateOrganizationUnits(ids: string[]) {
-  const response = await (axios({
+const getOrganisationUnints = async () => {
+  return (axios({
     method: 'get',
     url: `${
       process.env.DHIS2_URL
@@ -11,6 +12,17 @@ export async function validateOrganizationUnits(ids: string[]) {
       password: process.env.DHIS2_PASSWORD
     }
   }).catch((err: Error) => console.log(err.message)));
-  console.log(response);
-  return true;
+}
+
+export async function validateOrganizationUnits(ids: string[]) {
+  const response = await getOrganisationUnints();
+  if (response) {
+    const orgIds = response.data.organisationUnits.map((org: any) => org.id)
+    const inter = _.intersection(ids, orgIds);
+    if (inter.length === ids.length) {
+      return true
+    }
+    return false;
+  }
+  return false;
 }
