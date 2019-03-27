@@ -30,7 +30,7 @@ import {
 
 import { inject } from '@loopback/context';
 import { Logger } from '../utils';
-import { PostObject } from '../interfaces';
+import { PostObject, Response as PayloadResponse } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
 const Joi = require('joi');
@@ -166,7 +166,7 @@ export class DataElementsController {
     },
   })
   //TODO:  error response
-  async create(@requestBody() data: PostObject): Promise<any> {
+  async create(@requestBody() data: PostObject): Promise<PayloadResponse | Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     //TODO: Handle clientId undefined state send but response
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
