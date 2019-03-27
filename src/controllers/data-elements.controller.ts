@@ -187,16 +187,16 @@ export class DataElementsController {
     }
     this.logger.info('Payload structure passed validation')
 
-    //TODO: start migration to record start migration
-    const migration: Migration | null = await this.migrationRepository.startMigration(client, data.values.length);
+    const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
+    if (!migration) {
+      this.logger.info('Could not create migration');
+      return this.res.status(500).send('Failed to connect to the Database');
+    }
     this.logger.info('Validating data elements')
-
-    //TODO: if migration is null, terminate
     this.checkMigrationReadiness(clientId, data, migration);
     this.res.status(202);
     this.logger.info('Sendind feedback on reciept to client');
 
-    //TODO: type this response
     return {
       message: 'Payload recieved successfully',
       notificationsChannel: this.channelId,

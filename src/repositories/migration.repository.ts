@@ -25,7 +25,7 @@ export class MigrationRepository extends DefaultCrudRepository<
     });
   }
 
-  async startMigration(clientId: number | undefined, totalDataElements: number): Promise<Migration> {
+  async recordStartMigration(clientId: number | undefined, totalDataElements: number): Promise<Migration> {
     const date: Date = new Date(Date.now());
     return await this.create({
       clientId,
