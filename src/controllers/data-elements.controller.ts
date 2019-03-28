@@ -29,12 +29,11 @@ import {
 } from '@loopback/rest';
 
 import { inject } from '@loopback/context';
-import { Logger } from '../utils';
+import { Logger, MigrationReadiness } from '../utils';
 import { PostObject, Response as PayloadResponse } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
 const Joi = require('joi');
-const amqp = require('amqplib/callback_api');
 
 const schema: object = Joi.object().keys({
   description: Joi.string()
@@ -55,7 +54,7 @@ const schema: object = Joi.object().keys({
 });
 
 export class DataElementsController {
-  private logger: any;
+  private logger: Logger;
   private channelId: string;
   constructor(
     @inject(RestBindings.Http.REQUEST) private req: Request,
@@ -69,91 +68,11 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
+    @inject('check-migration-readiness') protected migrationReadiness: MigrationReadiness
   ) {
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
       this.logger = new Logger(this.channelId);
-    }
-  }
-
-  //TODO: make it into a class check static, some logic be encapsulated in private method
-  //TODO: clientId will always be a string
-  async checkMigrationReadiness(
-    clientId: string | undefined,
-    data: PostObject,
-    migration: Migration | null,
-  ): Promise<void> {
-    if (migration) {
-      const { values = [] } = data;
-
-      //TODO: find a more expressive name
-      let flag: boolean = false;
-
-      //TODO: rename to payload values
-      for (const row of values) {
-        const { dataElementCode, value, organizationUnitCode, period } = row;
-
-        const where = { dataElementId: dataElementCode };
-        const dataElement: DataElement | null = await this.dataElementRepository.findOne(
-          { where },
-        );
-
-        //TODO: think what to do when data element is null, possibly break 🙃
-
-
-        if (dataElement) {
-          const migrationDataElement: any = {
-            organizationUnitCode,
-            migrationId: migration.id,
-            value,
-            dataElementId: dataElement.id,
-            isElementAuthorized: true,
-            isValueValid: true,
-            isProcessed: false,
-            isMigrated: false,
-            period
-          };
-
-
-          const savedMigrationDataElement = await this.migrationDataElementsRepository.create(
-            migrationDataElement,
-          );
-
-          if (!savedMigrationDataElement)
-            this.logger.info(`element "${
-              dataElement.dataElementName
-              }" was not uploaded to the database`);
-          else
-            this.logger.info(`element "${dataElement.dataElementName}" is added successfully to the database`);
-        } else {
-          flag = true;
-          break;
-        }
-      }
-      if (!flag) {
-        this.logger.info('Data elements passed validationg')
-
-        migration.elementsAuthorizationAt = new Date(Date.now());
-        await this.migrationRepository
-          .update(migration)
-          .catch(function (err) {
-            this.logger.error(err)
-          });
-        await this.dataElementRepository.pushToMigrationQueue(migration.id, this.channelId);
-        this.logger.info('Passing payload to migration queue')
-      } else {
-        this.logger.info('Data elements failed validationg')
-        migration.elementsFailedAuthorizationAt = new Date(Date.now());
-        await this.migrationRepository
-          .update(migration)
-          .catch(function (err) {
-            this.logger.error(err)
-          });
-        this.logger.info('Data elements sending email to client')
-        await this.dataElementRepository.pushToEmailQueue(migration.id, 'openmls@gmail.com', flag, this.channelId);
-      }
-    } else {
-      this.logger.info('Invalid migration')
     }
   }
 
@@ -165,12 +84,17 @@ export class DataElementsController {
       },
     },
   })
-  //TODO:  error response
+
   async create(@requestBody() data: PostObject): Promise<PayloadResponse | Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
-    //TODO: Handle clientId undefined state send but response
+    if (!clientId) {
+      return this.res.status(400).send('Interoperability layer client missing from request');
+    }
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
-    //TODO: handle client undefined and respond fast
+
+    if (!client) {
+      return this.res.status(400).send('Could not find client from the database');
+    }
 
     this.logger.info('Validating payload structure')
 
@@ -188,12 +112,14 @@ export class DataElementsController {
     this.logger.info('Payload structure passed validation')
 
     const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
+
     if (!migration) {
       this.logger.info('Could not create migration');
       return this.res.status(500).send('Failed to connect to the Database');
     }
     this.logger.info('Validating data elements')
-    this.checkMigrationReadiness(clientId, data, migration);
+    this.migrationReadiness.init(this.channelId, this.logger);
+    this.migrationReadiness.checkMigrationReadiness(clientId, data, migration);
     this.res.status(202);
     this.logger.info('Sendind feedback on reciept to client');
 
@@ -217,7 +143,7 @@ export class DataElementsController {
     @param.query.number('limit') limit = 0,
     @param.query.number('skip') skip = 0,
     @param.query.string('name') name = '',
-  ): Promise<any> {
+  ): Promise<Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
 
     let dataElements: Array<DataElement> = [];
@@ -240,6 +166,8 @@ export class DataElementsController {
           limit,
         });
       }
+    } else {
+      this.res.status(400).send('Interoperability client not found')
     }
 
     this.res.set('Content-Type', 'application/json');

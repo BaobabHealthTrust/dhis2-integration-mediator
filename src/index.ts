@@ -1,20 +1,21 @@
-import {MediatorApplication} from './application';
-import {ApplicationConfig} from '@loopback/core';
-export {MediatorApplication};
+import { MediatorApplication } from './application';
+import { ApplicationConfig } from '@loopback/core';
+export { MediatorApplication };
 const medUtils = require('openhim-mediator-utils');
-const {registerMediator} = require('@kuunika/kupiga');
+const { registerMediator } = require('@kuunika/kupiga');
 
 require('dotenv').config();
-const {api, register} = require('config');
+const { api, register } = require('config');
 
 import * as mediatorConfig from '../config/mediator.json';
+import { MigrationReadiness } from './utils/';
 
 export async function main(options: ApplicationConfig = {}) {
   // TODO: refactor this
   await registerMediator(api, register, mediatorConfig);
   // end
-
   const app = new MediatorApplication(options);
+  await app.bind('check-migration-readiness').toClass(MigrationReadiness);
   await app.boot();
   await app.start();
 
