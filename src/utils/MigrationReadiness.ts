@@ -15,6 +15,7 @@ import { Logger } from '.';
 export class MigrationReadiness {
   private logger: Logger;
   private channelId: string;
+  private clientId: string;
   constructor(
     @repository(ClientRepository) protected clientRepository: ClientRepository,
     @repository(DataSetRepository)
@@ -28,12 +29,13 @@ export class MigrationReadiness {
   ) {
   }
 
-  public async init(channelId: string, logger: Logger) {
+  public async init(channelId: string, logger: Logger, clientId: string) {
     this.channelId = channelId;
     this.logger = logger;
+    this.clientId = clientId;
   }
 
-  private async toMigrationQueue(migration: Migration) {
+  private async toMigrationQueue(migration: Migration, clientId: string) {
     this.logger.info('Data elements passed validationg')
     migration.elementsAuthorizationAt = new Date(Date.now());
     await this.migrationRepository
@@ -41,11 +43,11 @@ export class MigrationReadiness {
       .catch(function (err) {
         this.logger.error(err)
       });
-    await this.dataElementRepository.pushToMigrationQueue(migration.id, this.channelId);
+    await this.dataElementRepository.pushToMigrationQueue(migration.id, this.channelId, this.clientId);
     this.logger.info('Passing payload to migration queue')
   }
 
-  private async toEmailQueue(migration: Migration, emailFlag: boolean) {
+  private async toEmailQueue(migration: Migration, emailFlag: boolean, clientId: string) {
     this.logger.info('Data elements failed validationg')
     migration.elementsFailedAuthorizationAt = new Date(Date.now());
     await this.migrationRepository
@@ -54,7 +56,12 @@ export class MigrationReadiness {
         this.logger.error(err)
       });
     this.logger.info('Data elements sending email to client')
-    await this.dataElementRepository.pushToEmailQueue(migration.id, 'openmls@gmail.com', emailFlag, this.channelId);
+    await this.dataElementRepository.pushToEmailQueue(
+      migration.id,
+      emailFlag,
+      this.channelId,
+      this.clientId
+    );
   }
 
   public async checkMigrationReadiness(
@@ -99,9 +106,9 @@ export class MigrationReadiness {
       }
     }
     if (!unprocessableDataElementFound) {
-      this.toMigrationQueue(migration);
+      this.toMigrationQueue(migration, clientId);
     } else {
-      this.toEmailQueue(migration, unprocessableDataElementFound);
+      this.toEmailQueue(migration, unprocessableDataElementFound, clientId);
     }
   }
 }

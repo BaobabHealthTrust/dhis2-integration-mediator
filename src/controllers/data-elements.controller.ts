@@ -118,7 +118,7 @@ export class DataElementsController {
       return this.res.status(500).send('Failed to connect to the Database');
     }
     this.logger.info('Validating data elements')
-    this.migrationReadiness.init(this.channelId, this.logger);
+    this.migrationReadiness.init(this.channelId, this.logger, clientId);
     this.migrationReadiness.checkMigrationReadiness(clientId, data, migration);
     this.res.status(202);
     this.logger.info('Sendind feedback on reciept to client');
