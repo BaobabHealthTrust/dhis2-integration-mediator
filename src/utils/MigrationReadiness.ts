@@ -16,6 +16,8 @@ export class MigrationReadiness {
   private logger: Logger;
   private channelId: string;
   private clientId: string;
+  private description: string;
+  private migration: Migration;
   constructor(
     @repository(ClientRepository) protected clientRepository: ClientRepository,
     @repository(DataSetRepository)
@@ -29,45 +31,47 @@ export class MigrationReadiness {
   ) {
   }
 
-  public async init(channelId: string, logger: Logger, clientId: string) {
+  public async init(
+    migration: Migration, channelId: string, logger: Logger, clientId: string, description: string) {
     this.channelId = channelId;
     this.logger = logger;
     this.clientId = clientId;
+    this.description = description;
+    this.migration = migration;
   }
 
-  private async toMigrationQueue(migration: Migration, clientId: string) {
+  private async toMigrationQueue() {
     this.logger.info('Data elements passed validationg')
-    migration.elementsAuthorizationAt = new Date(Date.now());
+    this.migration.elementsAuthorizationAt = new Date(Date.now());
     await this.migrationRepository
-      .update(migration)
+      .update(this.migration)
       .catch(function (err) {
         this.logger.error(err)
       });
-    await this.dataElementRepository.pushToMigrationQueue(migration.id, this.channelId, this.clientId);
+    await this.dataElementRepository.pushToMigrationQueue(this.migration.id, this.channelId, this.clientId, this.description);
     this.logger.info('Passing payload to migration queue')
   }
 
-  private async toEmailQueue(migration: Migration, emailFlag: boolean, clientId: string) {
+  private async toEmailQueue(emailFlag: boolean) {
     this.logger.info('Data elements failed validationg')
-    migration.elementsFailedAuthorizationAt = new Date(Date.now());
+    this.migration.elementsFailedAuthorizationAt = new Date(Date.now());
     await this.migrationRepository
-      .update(migration)
+      .update(this.migration)
       .catch(function (err) {
         this.logger.error(err)
       });
     this.logger.info('Data elements sending email to client')
     await this.dataElementRepository.pushToEmailQueue(
-      migration.id,
+      this.migration.id,
       emailFlag,
       this.channelId,
-      this.clientId
+      this.clientId,
+      this.description
     );
   }
 
   public async checkMigrationReadiness(
-    clientId: string,
-    data: PostObject,
-    migration: Migration,
+    data: PostObject
   ): Promise<void> {
     const payloadValues = data.values;
 
@@ -83,7 +87,7 @@ export class MigrationReadiness {
       if (dataElement) {
         const migrationDataElement: any = {
           organizationUnitCode,
-          migrationId: migration.id,
+          migrationId: this.migration.id,
           value,
           dataElementId: dataElement.id,
           isElementAuthorized: true,
@@ -106,9 +110,9 @@ export class MigrationReadiness {
       }
     }
     if (!unprocessableDataElementFound) {
-      this.toMigrationQueue(migration, clientId);
+      this.toMigrationQueue();
     } else {
-      this.toEmailQueue(migration, unprocessableDataElementFound, clientId);
+      this.toEmailQueue(unprocessableDataElementFound);
     }
   }
 }

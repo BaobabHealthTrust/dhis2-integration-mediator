@@ -37,7 +37,7 @@ export class DataElementRepository extends DefaultCrudRepository<
     else return undefined;
   }
 
-  pushToMigrationQueue(migrationId: number | undefined, channelId: string, clientId: string): void {
+  pushToMigrationQueue(migrationId: number | undefined, channelId: string, clientId: string, description: string): void {
     const host = process.env.DIM_MIGRATION_QUEUE_HOST || 'amqp://localhost';
 
     amqp.connect(
@@ -55,7 +55,7 @@ export class DataElementRepository extends DefaultCrudRepository<
             process.env.DIM_MIGRATION_QUEUE_NAME || 'INTEGRATION_MEDIATOR';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({ migrationId, channelId, clientId });
+          const message = JSON.stringify({ migrationId, channelId, clientId, description });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
@@ -71,7 +71,8 @@ export class DataElementRepository extends DefaultCrudRepository<
     migrationId: number | undefined,
     flag: boolean,
     channelId: string,
-    clientId: string
+    clientId: string,
+    description: string
   ): void {
     const host = process.env.DIM_EMAIL_QUEUE_HOST || 'amqp://localhost';
 
@@ -93,7 +94,7 @@ export class DataElementRepository extends DefaultCrudRepository<
           ch.assertQueue(queueName, options);
 
           const source = "mediator"
-          const message = JSON.stringify({ migrationId, flag, source, channelId, clientId });
+          const message = JSON.stringify({ migrationId, flag, source, channelId, clientId, description });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });
