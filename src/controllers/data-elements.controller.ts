@@ -12,7 +12,6 @@ import {
 } from '../repositories';
 
 import {
-  Client,
   DataSet,
   DataElement,
   Migration,
@@ -27,33 +26,11 @@ import {
   requestBody,
   param,
 } from '@loopback/rest';
-
-import { writeFileSync } from 'fs';
-
 import { inject } from '@loopback/context';
-import { Logger, MigrationReadiness } from '../utils';
+import { Logger } from '../utils';
 import { PostObject, Response as PayloadResponse } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
-const Joi = require('joi');
-
-const schema: object = Joi.object().keys({
-  description: Joi.string()
-    .min(3)
-    .required(),
-  values: Joi.array()
-    .items(
-      Joi.object()
-        .keys({
-          value: Joi.number().required(),
-          dataElementCode: Joi.string().required(),
-          organizationUnitCode: Joi.string().required(),
-          period: Joi.string().required(),
-        })
-        .required(),
-    )
-    .required(),
-});
 
 export class DataElementsController {
   private logger: Logger;
