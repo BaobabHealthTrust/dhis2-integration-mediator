@@ -28,6 +28,8 @@ import {
   param,
 } from '@loopback/rest';
 
+import { writeFileSync } from 'fs';
+
 import { inject } from '@loopback/context';
 import { Logger, MigrationReadiness } from '../utils';
 import { PostObject, Response as PayloadResponse } from '../interfaces';
@@ -68,12 +70,17 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
-    @inject('check-migration-readiness') protected migrationReadiness: MigrationReadiness
   ) {
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
       this.logger = new Logger(this.channelId);
     }
+  }
+
+  private async writePayloadToFile(data: PostObject): Promise<boolean> {
+    this.logger.info('writting payload to file')
+    await writeFileSync(`data/${this.channelId}.adx`, JSON.stringify(data));
+    return true;
   }
 
   @post('/dhis2/data-elements', {
@@ -91,38 +98,17 @@ export class DataElementsController {
       return this.res.status(400).send('Interoperability layer client missing from request');
     }
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
-
     if (!client) {
       return this.res.status(400).send('Could not find client from the database');
     }
-
-    this.logger.info('Validating payload structure')
-
-    const { error } = Joi.validate(data, schema);
-
-    if (error) {
-      this.logger.info('Payload structure failed validation, terminating migration')
-
-      const { values = [] } = data;
-
-      await this.migrationRepository.persistError(client, values.length);
-
-      return this.res.status(400).send(error.details[0].message);
-    }
-    this.logger.info('Payload structure passed validation')
-
     const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
-
     if (!migration) {
       this.logger.info('Could not create migration');
       return this.res.status(500).send('Failed to connect to the Database');
     }
-    this.logger.info('Validating data elements')
-    this.migrationReadiness.init(migration, this.channelId, this.logger, clientId, data.description);
-    this.migrationReadiness.checkMigrationReadiness(data);
+    await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
     this.res.status(202);
-    this.logger.info('Sendind feedback on reciept to client');
-
+    this.logger.info('Sending feedback on reciept to client');
     return {
       message: 'Payload recieved successfully',
       notificationsChannel: this.channelId,

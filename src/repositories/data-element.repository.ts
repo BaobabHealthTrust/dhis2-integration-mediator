@@ -4,6 +4,7 @@ import { MysqlDataSource } from '../datasources';
 import { inject } from '@loopback/core';
 import { PostObject } from '../interfaces';
 import { Logger } from '../utils/logger';
+import { writeFileSync } from 'fs';
 import {
   ClientRepository,
   MigrationDataElementsRepository,
@@ -65,6 +66,17 @@ export class DataElementRepository extends DefaultCrudRepository<
         });
       },
     );
+  }
+
+  async writePayloadToFile(channelId: string, data: PostObject, logger: Logger): Promise<boolean> {
+    try {
+      logger.info('writting payload to file')
+      await writeFileSync(`data/${channelId}.adx`, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      logger.error('An error occured while saving to the file');
+      return false;
+    }
   }
 
   pushToEmailQueue(
