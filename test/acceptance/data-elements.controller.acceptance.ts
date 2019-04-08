@@ -24,7 +24,6 @@ describe('data elements', () => {
   let client: Client;
 
   let dataElementsRepository: StubbedInstanceWithSinonAccessor<DataElementRepository>;
-  const filePath = '../../../data/test-payload.adx';
   let writePayloadToFile: sinon.SinonStub;
   beforeEach(async () => {
     dataElementsRepository = createStubInstance(DataElementRepository);

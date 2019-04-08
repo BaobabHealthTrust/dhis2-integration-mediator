@@ -99,14 +99,18 @@ export class DataElementsController {
     }
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
     if (!client) {
-      return this.res.status(400).send('Could not find client from the database');
+      return this.res.status(500).send('Could not fetch client from the database');
     }
     const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
     if (!migration) {
       this.logger.info('Could not create migration');
       return this.res.status(500).send('Failed to connect to the Database');
     }
-    await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
+    const writtenToFile = await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
+    if (!writtenToFile) {
+      this.logger.info('failed to save payload to file')
+      return this.res.status(500).send('Failed to save your payload to file');
+    }
     this.res.status(202);
     this.logger.info('Sending feedback on reciept to client');
     return {
