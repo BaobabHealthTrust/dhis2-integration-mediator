@@ -77,12 +77,6 @@ export class DataElementsController {
     }
   }
 
-  private async writePayloadToFile(data: PostObject): Promise<boolean> {
-    this.logger.info('writting payload to file')
-    await writeFileSync(`data/${this.channelId}.adx`, JSON.stringify(data));
-    return true;
-  }
-
   @post('/dhis2/data-elements', {
     responses: {
       '200': {
