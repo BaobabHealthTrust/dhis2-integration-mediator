@@ -68,6 +68,33 @@ export class DataElementRepository extends DefaultCrudRepository<
     );
   }
 
+  pushToValidationQueue(migrationId: number | undefined, channelId: string, clientId: string): void {
+    const host = process.env.DIM_VALIDATION_QUEUE_HOST || 'amqp://localhost';
+    amqp.connect(
+      host,
+      function (err: any, conn: any): void {
+        if (err) console.log(err);
+        conn.createChannel(function (err: any, ch: any) {
+          if (err) console.log(err);
+
+          const options = {
+            durable: true,
+          };
+
+          const queueName =
+            process.env.DIM_VALIDATION_QUEUE_NAME || 'DHIS2_VALIDATION_QUEUE';
+
+          ch.assertQueue(queueName, options);
+          const message = JSON.stringify({ migrationId, channelId, clientId });
+          ch.sendToQueue(queueName, Buffer.from(message), {
+            persistent: true,
+          });
+          setTimeout(() => conn.close(), 500);
+        });
+      },
+    );
+  }
+
   async writePayloadToFile(channelId: string, data: PostObject, logger: Logger): Promise<boolean> {
     try {
       logger.info('writting payload to file')

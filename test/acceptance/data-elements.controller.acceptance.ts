@@ -7,9 +7,11 @@ import { Client } from '@loopback/testlab';
 import { MediatorApplication } from '../..';
 import { setupApplication } from './test-helper';
 const dotenv = require('dotenv');
-import { DataElementRepository } from '../../src/repositories';
+import { DataElementRepository, ClientRepository } from '../../src/repositories';
 import { Logger } from '../../src/utils'
 import { PostObject } from '../../src/interfaces';
+import { testdb } from '../../src/tests/fixtures/datasources/testdb.datasource';
+import { existsSync, unlinkSync } from 'fs';
 
 import {
   createStubInstance,
@@ -23,11 +25,11 @@ describe('data elements', () => {
   let app: MediatorApplication;
   let client: Client;
 
-  let dataElementsRepository: StubbedInstanceWithSinonAccessor<DataElementRepository>;
-  let writePayloadToFile: sinon.SinonStub;
+  let dataElementsRepository: DataElementRepository;
+  const channelId = 'test-payload';
+  const payLoadFilePath = `./../../../data/${channelId}.adx`;
   beforeEach(async () => {
-    dataElementsRepository = createStubInstance(DataElementRepository);
-    ({ writePayloadToFile } = dataElementsRepository.stubs);
+    dataElementsRepository = new DataElementRepository(testdb, new ClientRepository(testdb));
   });
 
   before('setupApplication', async () => {
@@ -36,6 +38,11 @@ describe('data elements', () => {
 
   after(async () => {
     await app.stop();
+    try {
+      unlinkSync(payLoadFilePath);
+    } catch (err) {
+      console.log(err.message);
+    }
     setTimeout(() => { process.exit(1) }, 2000)
   });
 
@@ -60,7 +67,6 @@ describe('data elements', () => {
   });
 
   it('can write a recieved payload to a file', async () => {
-    const channelId = 'test-channel';
     const logger = new Logger(channelId)
     const data: PostObject = {
       description: 'test-payload',
@@ -73,9 +79,8 @@ describe('data elements', () => {
         }
       ]
     }
-    writePayloadToFile.resolves(true);
     const result = await dataElementsRepository.writePayloadToFile(channelId, data, logger);
     expect(result).to.eql(true);
-    sinon.assert.calledWith(writePayloadToFile, channelId, data, logger);
+    // expect(existsSync(payLoadFilePath)).to.eql(true)
   });
 });

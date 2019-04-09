@@ -72,7 +72,7 @@ export class DataElementsController {
     if (!client) {
       return this.res.status(500).send('Could not fetch client from the database');
     }
-    const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
+    const migration: Migration = await this.migrationRepository.recordStartMigration(client, data.values.length);
     if (!migration) {
       this.logger.info('Could not create migration');
       return this.res.status(500).send('Failed to connect to the Database');
@@ -82,6 +82,7 @@ export class DataElementsController {
       this.logger.info('failed to save payload to file')
       return this.res.status(500).send('Failed to save your payload to file');
     }
+    await this.dataElementRepository.pushToValidationQueue(migration.id, this.channelId, clientId);
     this.res.status(202);
     this.logger.info('Sending feedback on reciept to client');
     return {
