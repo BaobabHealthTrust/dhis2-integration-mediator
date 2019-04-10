@@ -14,10 +14,7 @@ import { testdb } from '../../src/tests/fixtures/datasources/testdb.datasource';
 import { existsSync, unlinkSync } from 'fs';
 
 import {
-  createStubInstance,
-  expect,
-  sinon,
-  StubbedInstanceWithSinonAccessor,
+  expect
 } from '@loopback/testlab';
 dotenv.config();
 
@@ -27,7 +24,6 @@ describe('data elements', () => {
 
   let dataElementsRepository: DataElementRepository;
   const channelId = 'test-payload';
-  const payLoadFilePath = `./../../../data/${channelId}.adx`;
   beforeEach(async () => {
     dataElementsRepository = new DataElementRepository(testdb, new ClientRepository(testdb));
   });
@@ -38,32 +34,7 @@ describe('data elements', () => {
 
   after(async () => {
     await app.stop();
-    try {
-      unlinkSync(payLoadFilePath);
-    } catch (err) {
-      console.log(err.message);
-    }
     setTimeout(() => { process.exit(1) }, 2000)
-  });
-
-  it('should recieve a payload with the right structure', async () => {
-    const samplePayload = {
-      description: "Sample payload",
-      values: [
-        {
-          dataElementCode: "123xyz",
-          value: 12,
-          organizationUnitCode: "xyz123",
-          period: "201012"
-        }
-      ]
-    }
-    await client
-      .post('/dhis2/data-elements')
-      .set('x-openhim-clientid', process.env.API_TEST_CLIENT || '')
-      .send(samplePayload)
-      .expect(202)
-      .expect('Content-Type', /application\/json/);
   });
 
   it('can write a recieved payload to a file', async () => {
@@ -81,6 +52,5 @@ describe('data elements', () => {
     }
     const result = await dataElementsRepository.writePayloadToFile(channelId, data, logger);
     expect(result).to.eql(true);
-    // expect(existsSync(payLoadFilePath)).to.eql(true)
   });
 });
