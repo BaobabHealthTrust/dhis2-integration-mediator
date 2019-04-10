@@ -6,9 +6,7 @@ import { PostObject } from '../interfaces';
 import { Logger } from '../utils/logger';
 import { writeFileSync } from 'fs';
 import {
-  ClientRepository,
-  MigrationDataElementsRepository,
-  MigrationRepository
+  ClientRepository
 }
   from '.';
 
@@ -68,7 +66,7 @@ export class DataElementRepository extends DefaultCrudRepository<
     );
   }
 
-  pushToValidationQueue(migrationId: number | undefined, channelId: string, clientId: string): void {
+  pushToValidationQueue(channelId: string, clientId: string): void {
     const host = process.env.DIM_VALIDATION_QUEUE_HOST || 'amqp://localhost';
     amqp.connect(
       host,
@@ -85,7 +83,7 @@ export class DataElementRepository extends DefaultCrudRepository<
             process.env.DIM_VALIDATION_QUEUE_NAME || 'DHIS2_VALIDATION_QUEUE';
 
           ch.assertQueue(queueName, options);
-          const message = JSON.stringify({ migrationId, channelId, clientId });
+          const message = JSON.stringify({ channelId, clientId });
           ch.sendToQueue(queueName, Buffer.from(message), {
             persistent: true,
           });

@@ -12,27 +12,4 @@ export class MigrationRepository extends DefaultCrudRepository<
   ) {
     super(Migration, dataSource);
   }
-
-  // TODO: clientId will always be a number
-  async persistError(clientId: number | undefined, totalDataElements: number) {
-    await this.create({
-      clientId,
-      structureFailedValidationAt: new Date(Date.now()),
-      valuesFailedValidationAt: new Date(Date.now()),
-      elementsFailedAuthorizationAt: new Date(Date.now()),
-      uploadedAt: new Date(Date.now()),
-      totalDataElements,
-    });
-  }
-
-  async recordStartMigration(clientId: number | undefined, totalDataElements: number): Promise<Migration> {
-    const date: Date = new Date(Date.now());
-    return await this.create({
-      clientId,
-      structureValidatedAt: date,
-      valuesValidatedAt: date,
-      uploadedAt: date,
-      totalDataElements,
-    });
-  }
 }
