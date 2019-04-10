@@ -1,8 +1,4 @@
-import {
-  repository,
-  ArrayType,
-  WhereBuilder,
-} from '@loopback/repository';
+import {repository, ArrayType, WhereBuilder} from '@loopback/repository';
 import {
   ClientRepository,
   DataSetRepository,
@@ -11,11 +7,7 @@ import {
   MigrationDataElementsRepository,
 } from '../repositories';
 
-import {
-  DataSet,
-  DataElement,
-  Migration,
-} from '../models';
+import {DataSet, DataElement} from '../models';
 
 import {
   get,
@@ -26,9 +18,9 @@ import {
   requestBody,
   param,
 } from '@loopback/rest';
-import { inject } from '@loopback/context';
-import { Logger } from '../utils';
-import { PostObject, Response as PayloadResponse } from '../interfaces';
+import {inject} from '@loopback/context';
+import {Logger} from '../utils';
+import {PostObject, Response as PayloadResponse} from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
 
@@ -58,26 +50,43 @@ export class DataElementsController {
     responses: {
       '200': {
         description: 'Post data element values',
-        content: { 'application/json': { schema: { 'x-ts-type': ArrayType } } },
+        content: {'application/json': {schema: {'x-ts-type': ArrayType}}},
       },
     },
   })
-
-  async create(@requestBody() data: PostObject): Promise<PayloadResponse | Response> {
+  async create(
+    @requestBody() data: PostObject,
+  ): Promise<PayloadResponse | Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
+
     if (!clientId) {
-      return this.res.status(503).send('Interoperability layer client missing from request');
+      return this.res
+        .status(503)
+        .send('Interoperability layer client missing from request');
     }
-    const client: number | undefined = await this.dataElementRepository.getClient(clientId);
+
+    const client:
+      | number
+      | undefined = await this.dataElementRepository.getClient(clientId);
     if (!client) {
-      return this.res.status(503).send('Could not fetch client from the database');
+      return this.res
+        .status(503)
+        .send('Could not fetch client from the database');
     }
-    const writtenToFile = await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
+
+    const writtenToFile = await this.dataElementRepository.writePayloadToFile(
+      this.channelId,
+      data,
+      this.logger,
+    );
     if (!writtenToFile) {
-      this.logger.info('failed to save payload to file')
+      this.logger.info('failed to save payload to file');
       return this.res.status(503).send('Failed to save your payload to file');
     }
-    await this.dataElementRepository.pushToValidationQueue(this.channelId, clientId);
+    await this.dataElementRepository.pushToValidationQueue(
+      this.channelId,
+      clientId,
+    );
     this.res.status(202);
     this.logger.info('Sending feedback on reciept to client');
     return {
@@ -105,10 +114,13 @@ export class DataElementsController {
 
     let dataElements: Array<DataElement> = [];
 
-    const client: number | undefined = await this.dataElementRepository.findClientId(clientId);
+    const client:
+      | number
+      | undefined = await this.dataElementRepository.findClientId(clientId);
+
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({
-        where: { clientId: client },
+        where: {clientId: client},
       });
       if (dataSet) {
         const where = new WhereBuilder().eq('dataSetId', dataSet.id).build();
@@ -117,14 +129,14 @@ export class DataElementsController {
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
-            dataElementName: { like: `%${name}%` },
+            dataElementName: {like: `%${name}%`},
           },
           skip,
           limit,
         });
       }
     } else {
-      this.res.status(400).send('Interoperability client not found')
+      this.res.status(400).send('Interoperability client not found');
     }
 
     this.res.set('Content-Type', 'application/json');
