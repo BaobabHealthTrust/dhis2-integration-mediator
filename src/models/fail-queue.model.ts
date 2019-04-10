@@ -1,4 +1,4 @@
-import { Entity, model, property } from '@loopback/repository';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
 export class FailQueue extends Entity {
@@ -18,12 +18,7 @@ export class FailQueue extends Entity {
     type: 'number',
     required: true,
   })
-  dataElementId: number;
-
-  @property({
-    type: 'date',
-  })
-  migratedAt?: string;
+  productId: number;
 
   @property({
     type: 'number',
