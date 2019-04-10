@@ -66,21 +66,21 @@ export class DataElementsController {
   async create(@requestBody() data: PostObject): Promise<PayloadResponse | Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     if (!clientId) {
-      return this.res.status(400).send('Interoperability layer client missing from request');
+      return this.res.status(503).send('Interoperability layer client missing from request');
     }
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
     if (!client) {
-      return this.res.status(500).send('Could not fetch client from the database');
+      return this.res.status(503).send('Could not fetch client from the database');
     }
     const migration: Migration = await this.migrationRepository.recordStartMigration(client, data.values.length);
     if (!migration) {
       this.logger.info('Could not create migration');
-      return this.res.status(500).send('Failed to connect to the Database');
+      return this.res.status(503).send('Failed to connect to the Database');
     }
     const writtenToFile = await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
     if (!writtenToFile) {
       this.logger.info('failed to save payload to file')
-      return this.res.status(500).send('Failed to save your payload to file');
+      return this.res.status(503).send('Failed to save your payload to file');
     }
     await this.dataElementRepository.pushToValidationQueue(migration.id, this.channelId, clientId);
     this.res.status(202);
