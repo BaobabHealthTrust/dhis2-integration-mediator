@@ -1,7 +1,9 @@
 const axios = require('axios');
 const _ = require('lodash');
+require('dotenv').config()
 
 const getOrganisationUnints = async () => {
+  console.log(process.env);
   return (axios({
     method: 'get',
     url: `${
@@ -16,6 +18,7 @@ const getOrganisationUnints = async () => {
 
 export async function validateOrganizationUnits(ids: string[]) {
   const response = await getOrganisationUnints();
+  console.log(`response ${response}`);
   if (response) {
     const orgIds = response.data.organisationUnits.map((org: any) => org.id)
     const inter = _.intersection(ids, orgIds);

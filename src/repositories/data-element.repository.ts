@@ -4,10 +4,9 @@ import { MysqlDataSource } from '../datasources';
 import { inject } from '@loopback/core';
 import { PostObject } from '../interfaces';
 import { Logger } from '../utils/logger';
+import { writeFileSync } from 'fs';
 import {
-  ClientRepository,
-  MigrationDataElementsRepository,
-  MigrationRepository
+  ClientRepository
 }
   from '.';
 
@@ -65,6 +64,44 @@ export class DataElementRepository extends DefaultCrudRepository<
         });
       },
     );
+  }
+
+  pushToValidationQueue(channelId: string, clientId: string): void {
+    const host = process.env.DIM_VALIDATION_QUEUE_HOST || 'amqp://localhost';
+    amqp.connect(
+      host,
+      function (err: any, conn: any): void {
+        if (err) console.log(err);
+        conn.createChannel(function (err: any, ch: any) {
+          if (err) console.log(err);
+
+          const options = {
+            durable: true,
+          };
+
+          const queueName =
+            process.env.DIM_VALIDATION_QUEUE_NAME || 'DHIS2_VALIDATION_QUEUE';
+
+          ch.assertQueue(queueName, options);
+          const message = JSON.stringify({ channelId, clientId });
+          ch.sendToQueue(queueName, Buffer.from(message), {
+            persistent: true,
+          });
+          setTimeout(() => conn.close(), 500);
+        });
+      },
+    );
+  }
+
+  async writePayloadToFile(channelId: string, data: PostObject, logger: Logger): Promise<boolean> {
+    try {
+      logger.info('writting payload to file')
+      await writeFileSync(`data/${channelId}.adx`, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      logger.error('An error occured while saving to the file');
+      return false;
+    }
   }
 
   pushToEmailQueue(

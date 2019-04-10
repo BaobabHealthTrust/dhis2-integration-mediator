@@ -67,3 +67,5 @@ config/mediator.json
 
 src/datasources/mysql.datasource.json
 
+*.adx
+

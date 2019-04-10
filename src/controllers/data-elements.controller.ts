@@ -12,7 +12,6 @@ import {
 } from '../repositories';
 
 import {
-  Client,
   DataSet,
   DataElement,
   Migration,
@@ -27,31 +26,11 @@ import {
   requestBody,
   param,
 } from '@loopback/rest';
-
 import { inject } from '@loopback/context';
-import { Logger, MigrationReadiness } from '../utils';
+import { Logger } from '../utils';
 import { PostObject, Response as PayloadResponse } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
-const Joi = require('joi');
-
-const schema: object = Joi.object().keys({
-  description: Joi.string()
-    .min(3)
-    .required(),
-  values: Joi.array()
-    .items(
-      Joi.object()
-        .keys({
-          value: Joi.number().required(),
-          dataElementCode: Joi.string().required(),
-          organizationUnitCode: Joi.string().required(),
-          period: Joi.string().required(),
-        })
-        .required(),
-    )
-    .required(),
-});
 
 export class DataElementsController {
   private logger: Logger;
@@ -68,7 +47,6 @@ export class DataElementsController {
     protected migrationRepository: MigrationRepository,
     @repository(MigrationDataElementsRepository)
     protected migrationDataElementsRepository: MigrationDataElementsRepository,
-    @inject('check-migration-readiness') protected migrationReadiness: MigrationReadiness
   ) {
     if (req.method.toLocaleLowerCase() === 'post') {
       this.channelId = uuidv4();
@@ -88,41 +66,20 @@ export class DataElementsController {
   async create(@requestBody() data: PostObject): Promise<PayloadResponse | Response> {
     const clientId: string | undefined = this.req.get('x-openhim-clientid');
     if (!clientId) {
-      return this.res.status(400).send('Interoperability layer client missing from request');
+      return this.res.status(503).send('Interoperability layer client missing from request');
     }
     const client: number | undefined = await this.dataElementRepository.getClient(clientId);
-
     if (!client) {
-      return this.res.status(400).send('Could not find client from the database');
+      return this.res.status(503).send('Could not fetch client from the database');
     }
-
-    this.logger.info('Validating payload structure')
-
-    const { error } = Joi.validate(data, schema);
-
-    if (error) {
-      this.logger.info('Payload structure failed validation, terminating migration')
-
-      const { values = [] } = data;
-
-      await this.migrationRepository.persistError(client, values.length);
-
-      return this.res.status(400).send(error.details[0].message);
+    const writtenToFile = await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
+    if (!writtenToFile) {
+      this.logger.info('failed to save payload to file')
+      return this.res.status(503).send('Failed to save your payload to file');
     }
-    this.logger.info('Payload structure passed validation')
-
-    const migration: Migration | null = await this.migrationRepository.recordStartMigration(client, data.values.length);
-
-    if (!migration) {
-      this.logger.info('Could not create migration');
-      return this.res.status(500).send('Failed to connect to the Database');
-    }
-    this.logger.info('Validating data elements')
-    this.migrationReadiness.init(migration, this.channelId, this.logger, clientId, data.description);
-    this.migrationReadiness.checkMigrationReadiness(data);
+    await this.dataElementRepository.pushToValidationQueue(this.channelId, clientId);
     this.res.status(202);
-    this.logger.info('Sendind feedback on reciept to client');
-
+    this.logger.info('Sending feedback on reciept to client');
     return {
       message: 'Payload recieved successfully',
       notificationsChannel: this.channelId,
