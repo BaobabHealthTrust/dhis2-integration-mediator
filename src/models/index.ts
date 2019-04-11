@@ -6,3 +6,4 @@ export * from './fail-queue.model';
 export * from './migration-data-elements.model';
 export * from './facilities.model';
 export * from './products.model';
+export * from './validation-failures.model';

@@ -26,6 +26,12 @@ export class FailQueue extends Entity {
   })
   attempts: number;
 
+  @property({
+    type: 'date',
+    required: true,
+  })
+  createdAt: string;
+
   constructor(data?: Partial<FailQueue>) {
     super(data);
   }

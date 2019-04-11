@@ -25,6 +25,18 @@ export class Facilities extends Entity {
   })
   openLMISFaciliyCode?: string;
 
+  @property({
+    type: 'date',
+    required: true,
+  })
+  createdAt: string;
+
+  @property({
+    type: 'date',
+    required: true,
+  })
+  updatedAt: string;
+
   constructor(data?: Partial<Facilities>) {
     super(data);
   }

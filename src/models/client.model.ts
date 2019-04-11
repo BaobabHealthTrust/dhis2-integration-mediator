@@ -20,6 +20,18 @@ export class Client extends Entity {
   })
   email?: string;
 
+  @property({
+    type: 'date',
+    required: true,
+  })
+  createdAt: string;
+
+  @property({
+    type: 'date',
+    required: true,
+  })
+  updatedAt: string;
+
   constructor(data?: Partial<Client>) {
     super(data);
   }

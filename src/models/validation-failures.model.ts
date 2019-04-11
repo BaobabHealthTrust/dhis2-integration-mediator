@@ -1,30 +1,30 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Products extends Entity {
+export class ValidationFailures extends Entity {
   @property({
     type: 'number',
     id: true,
-    generated: true,
   })
   id?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
     required: true,
   })
-  productCode: string;
+  migrationId: number;
 
   @property({
     type: 'string',
     required: true,
   })
-  dataElementCode: string;
+  reason: string;
 
   @property({
     type: 'string',
+    required: true,
   })
-  openLMISCode?: string;
+  fileName: string;
 
   @property({
     type: 'date',
@@ -32,13 +32,8 @@ export class Products extends Entity {
   })
   createdAt: string;
 
-  @property({
-    type: 'date',
-    required: true,
-  })
-  updatedAt: string;
 
-  constructor(data?: Partial<Products>) {
+  constructor(data?: Partial<ValidationFailures>) {
     super(data);
   }
 }
