@@ -6,8 +6,7 @@ const { createLogger, format, transports } = winston;
 export class Logger {
   private _pusherLogger: Pusher;
   private _logger: any;
-  private channelId: string = "dhis2-integration-channelId";
-  constructor(private realChannelId: string) {
+  constructor(private channelId: string) {
     this._logger = createLogger({
       level: 'info',
       format: format.combine(
