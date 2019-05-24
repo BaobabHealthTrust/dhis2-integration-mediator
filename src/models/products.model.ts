@@ -1,30 +1,30 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class FailQueue extends Entity {
+export class Products extends Entity {
   @property({
     type: 'number',
     id: true,
+    generated: true,
   })
   id?: number;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  migrationId: number;
+  productCode: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  productId: number;
+  dataElementCode: string;
 
   @property({
-    type: 'number',
-    required: true,
+    type: 'string',
   })
-  attempts: number;
+  openLMISCode?: string;
 
   @property({
     type: 'date',
@@ -32,7 +32,13 @@ export class FailQueue extends Entity {
   })
   createdAt: string;
 
-  constructor(data?: Partial<FailQueue>) {
+  @property({
+    type: 'date',
+    required: true,
+  })
+  updatedAt: string;
+
+  constructor(data?: Partial<Products>) {
     super(data);
   }
 }

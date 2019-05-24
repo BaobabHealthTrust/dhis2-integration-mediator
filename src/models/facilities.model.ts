@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Client extends Entity {
+export class Facilities extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -13,12 +13,17 @@ export class Client extends Entity {
     type: 'string',
     required: true,
   })
-  name: string;
+  facilityCode: string;
 
   @property({
     type: 'string',
   })
-  email?: string;
+  DHIS2OrganizationalUnitCode?: string;
+
+  @property({
+    type: 'string',
+  })
+  openLMISFaciliyCode?: string;
 
   @property({
     type: 'date',
@@ -32,7 +37,7 @@ export class Client extends Entity {
   })
   updatedAt: string;
 
-  constructor(data?: Partial<Client>) {
+  constructor(data?: Partial<Facilities>) {
     super(data);
   }
 }

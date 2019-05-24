@@ -1,4 +1,4 @@
-import { Entity, model, property } from '@loopback/repository';
+import {Entity, model, property} from '@loopback/repository';
 
 @model()
 export class MigrationDataElements extends Entity {
@@ -9,16 +9,10 @@ export class MigrationDataElements extends Entity {
   id?: number;
 
   @property({
-    type: 'string',
-    required: true,
-  })
-  organizationUnitCode: string;
-
-  @property({
     type: 'number',
     required: true,
   })
-  dataElementId: number;
+  productId: number;
 
   @property({
     type: 'number',
@@ -30,19 +24,25 @@ export class MigrationDataElements extends Entity {
     type: 'number',
     required: true,
   })
+  facilityId: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
   value: number;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  isValueValid: boolean;
+  dataElementCode: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  isElementAuthorized: boolean;
+  organizationUnitCode: string;
 
   @property({
     type: 'number',
@@ -51,16 +51,15 @@ export class MigrationDataElements extends Entity {
   isProcessed: boolean;
 
   @property({
-    type: 'number',
-    required: true,
+    type: 'date',
   })
-  isMigrated: boolean;
+  migratedAt?: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  period: string;
+  reportingPeriod: string;
 
   constructor(data?: Partial<MigrationDataElements>) {
     super(data);

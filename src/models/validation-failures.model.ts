@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class FailQueue extends Entity {
+export class ValidationFailures extends Entity {
   @property({
     type: 'number',
     id: true,
@@ -15,16 +15,16 @@ export class FailQueue extends Entity {
   migrationId: number;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  productId: number;
+  reason: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  attempts: number;
+  fileName: string;
 
   @property({
     type: 'date',
@@ -32,7 +32,8 @@ export class FailQueue extends Entity {
   })
   createdAt: string;
 
-  constructor(data?: Partial<FailQueue>) {
+
+  constructor(data?: Partial<ValidationFailures>) {
     super(data);
   }
 }
