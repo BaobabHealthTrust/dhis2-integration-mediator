@@ -1,4 +1,4 @@
-import {repository, ArrayType, WhereBuilder} from '@loopback/repository';
+import { repository, ArrayType, WhereBuilder } from '@loopback/repository';
 import {
   ClientRepository,
   DataSetRepository,
@@ -7,7 +7,7 @@ import {
   MigrationDataElementsRepository,
 } from '../repositories';
 
-import {DataSet, DataElement} from '../models';
+import { DataSet, DataElement } from '../models';
 
 import {
   get,
@@ -18,9 +18,9 @@ import {
   requestBody,
   param,
 } from '@loopback/rest';
-import {inject} from '@loopback/context';
-import {Logger} from '../utils';
-import {PostObject, Response as PayloadResponse} from '../interfaces';
+import { inject } from '@loopback/context';
+import { Logger } from '../utils';
+import { PostObject, Response as PayloadResponse } from '../interfaces';
 
 const uuidv4 = require('uuid/v4');
 
@@ -50,7 +50,7 @@ export class DataElementsController {
     responses: {
       '200': {
         description: 'Post data element values',
-        content: {'application/json': {schema: {'x-ts-type': ArrayType}}},
+        content: { 'application/json': { schema: { 'x-ts-type': ArrayType } } },
       },
     },
   })
@@ -120,7 +120,7 @@ export class DataElementsController {
 
     if (client) {
       const dataSet: DataSet | null = await this.dataSetRepository.findOne({
-        where: {clientId: client},
+        where: { clientId: client },
       });
       if (dataSet) {
         const where = new WhereBuilder().eq('dataSetId', dataSet.id).build();
@@ -129,7 +129,7 @@ export class DataElementsController {
         dataElements = await this.dataElementRepository.find({
           where: {
             ...where,
-            dataElementName: {like: `%${name}%`},
+            dataElementName: { like: `%${name}%` },
           },
           skip,
           limit,
