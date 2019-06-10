@@ -41,7 +41,7 @@ export class Logger {
   }
   public info(message: string) {
     this._logger.info(message)
-    this._pusherLogger.trigger(this.channelId, 'my-event', message);
+    this._pusherLogger.trigger(this.channelId, 'my-event', { service: 'mediator', message });
   }
 
   public error(message: string) {
