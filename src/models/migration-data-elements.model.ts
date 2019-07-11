@@ -9,18 +9,6 @@ export class MigrationDataElements extends Entity {
   id?: number;
 
   @property({
-    type: 'string',
-    required: true,
-  })
-  organizationUnitCode: string;
-
-  @property({
-    type: 'number',
-    required: true,
-  })
-  dataElementId: number;
-
-  @property({
     type: 'number',
     required: true,
   })
@@ -30,19 +18,31 @@ export class MigrationDataElements extends Entity {
     type: 'number',
     required: true,
   })
+  productId: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  facilityId: number;
+
+  @property({
+    type: 'number',
+    required: true,
+  })
   value: number;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  isValueValid: boolean;
+  dataElementCode: number;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  isElementAuthorized: boolean;
+  organizationUnitCode: string;
 
   @property({
     type: 'number',
@@ -51,16 +51,22 @@ export class MigrationDataElements extends Entity {
   isProcessed: boolean;
 
   @property({
-    type: 'number',
-    required: true,
+    type: 'date',
+    defaultFn: 'now',
   })
-  isMigrated: boolean;
+  migratedAt?: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  period: string;
+  reportingPeriod: string;
+
+  @property({
+    type: 'date',
+    defaultFn: 'now',
+  })
+  createdAt?: string;
 
   constructor(data?: Partial<MigrationDataElements>) {
     super(data);
