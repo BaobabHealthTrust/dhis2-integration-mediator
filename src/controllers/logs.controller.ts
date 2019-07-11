@@ -19,7 +19,7 @@ export class LogsController {
     );
   }
 
-  @get('/dhis2/logs', {
+  @get('/dhis2/notifications/{channelId}', {
     responses: {
       '200': {
         description: 'Get all logs given a channelId',
@@ -30,7 +30,7 @@ export class LogsController {
     },
   })
   async logs(
-    @param.query.string('channelId') channelId = ''
+    @param.path.string('channelId') channelId: string = ''
   ): Promise<any[]> {
     if (!channelId) {
       throw new HttpErrors.UnprocessableEntity('Channel Id is required');

@@ -23,7 +23,8 @@
         }
       ],
       "allow": [
-        "client"
+        "client",
+        "adxadmin"
       ],
       "type": "http"
     }
