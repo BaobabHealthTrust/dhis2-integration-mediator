@@ -2,6 +2,7 @@ import { inject } from '@loopback/context';
 import {
   get,
   param,
+  HttpErrors
 } from '@loopback/rest';
 import * as redis from 'redis';
 const asyncRedis = require('async-redis');
@@ -32,6 +33,9 @@ export class LogsController {
   async logs(
     @param.query.string('channelId') channelId = ''
   ): Promise<any[]> {
+    if (!channelId) {
+      throw new HttpErrors.UnprocessableEntity('Channel Id is required');
+    }
     const start = 0;
     const end = -1;
     const lrangeAsync = promisify(this.redisClient.lrange).bind(this.redisClient);
