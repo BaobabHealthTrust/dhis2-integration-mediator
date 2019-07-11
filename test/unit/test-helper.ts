@@ -1,4 +1,4 @@
-import {MediatorApplication} from '../..';
+import { MediatorApplication } from '../..';
 import {
   createRestAppClient,
   givenHttpServerConfig,
@@ -7,7 +7,10 @@ import {
 
 export async function setupApplication(): Promise<AppWithClient> {
   const app = new MediatorApplication({
-    rest: givenHttpServerConfig(),
+    rest: {
+      port: process.env.PORT || 3000,
+      host: process.env.HOST || '0.0.0.0',
+    }
   });
 
   await app.boot();
@@ -15,7 +18,7 @@ export async function setupApplication(): Promise<AppWithClient> {
 
   const client = createRestAppClient(app);
 
-  return {app, client};
+  return { app, client };
 }
 
 export interface AppWithClient {

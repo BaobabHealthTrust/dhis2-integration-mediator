@@ -69,8 +69,9 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "@loopback/build": "^1.0.1",
-    "@loopback/testlab": "^1.0.1",
+    "@loopback/build": "1.0.1",
+    "@loopback/testlab": "1.0.1",
+    "@types/dotenv": "^6.1.1",
     "@types/node": "^10.11.2",
     "nodemon": "^1.18.9"
   }

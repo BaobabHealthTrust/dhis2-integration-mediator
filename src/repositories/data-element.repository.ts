@@ -71,7 +71,11 @@ export class DataElementRepository extends DefaultCrudRepository<
     amqp.connect(
       host,
       function (err: any, conn: any): void {
-        if (err) console.log(err);
+        if (err) {
+          console.log(err);
+          return;
+        }
+
         conn.createChannel(function (err: any, ch: any) {
           if (err) console.log(err);
 
