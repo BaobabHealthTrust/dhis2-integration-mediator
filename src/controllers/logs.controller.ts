@@ -1,4 +1,3 @@
-import { inject } from '@loopback/context';
 import {
   get,
   param,
@@ -40,7 +39,7 @@ export class LogsController {
     const end = -1;
     const lrangeAsync = promisify(this.redisClient.lrange).bind(this.redisClient);
     const values = await lrangeAsync(channelId, start, end);
-    const jsonValues = values.map(value => JSON.parse(value));
+    const jsonValues = values.map((value: string) => JSON.parse(value));
     return jsonValues;
   }
 }
