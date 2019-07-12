@@ -8,14 +8,12 @@ require('dotenv').config();
 const { api, register } = require('config');
 
 import * as mediatorConfig from '../config/mediator.json';
-import { MigrationReadiness } from './utils/';
 
 export async function main(options: ApplicationConfig = {}) {
   // TODO: refactor this
   await registerMediator(api, register, mediatorConfig);
   // end
   const app = new MediatorApplication(options);
-  await app.bind('check-migration-readiness').toClass(MigrationReadiness);
   await app.boot();
   await app.start();
 

@@ -64,6 +64,7 @@
     "openhim-mediator-utils": "^0.2.3",
     "pusher": "^2.2.0",
     "redis": "^2.8.0",
+    "tortoise": "^1.0.1",
     "ts-node": "^7.0.1",
     "uuid": "^3.3.2",
     "winston": "^3.2.1"
