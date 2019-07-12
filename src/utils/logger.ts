@@ -9,8 +9,6 @@ export class Logger {
     const service = 'mediator';
     const queueName = process.env.DIM_LOG_QUEUE_NAME || 'ADX_LOG_WORKER';
     const { channelId } = this;
-    // JSON.stringify({ message: { message, service }, channelId })
-    console.log('sending lgs');
     tortoise
       .queue(queueName, { durable: true })
       .publish({ message: JSON.stringify({ message, service }), channelId });
