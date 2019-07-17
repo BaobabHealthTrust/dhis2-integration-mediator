@@ -12,6 +12,11 @@ import * as mediatorConfig from '../config/mediator.json';
 export async function main(options: ApplicationConfig = {}) {
   // TODO: refactor this
   await registerMediator(api, register, mediatorConfig);
+  const _restConfig = {
+    ...options.rest || {},
+    requestBodyParser: { json: { limit: '100mb' } }
+  }
+  options.rest = _restConfig;
   // end
   const app = new MediatorApplication(options);
   await app.boot();
