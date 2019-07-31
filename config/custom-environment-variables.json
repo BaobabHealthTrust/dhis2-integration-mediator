@@ -3,7 +3,6 @@
   "heartbeat": "HEARTBEAT",
   "register": "REGISTER",
   "database": "DATABASE",
-  "port": "PORT",
   "log": {
     "level": "LOG_LEVEL"
   },

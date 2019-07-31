@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class Migration extends Entity {
@@ -76,6 +76,12 @@ export class Migration extends Entity {
     required: true,
   })
   clientId: number;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  channelId: string;
 
   constructor(data?: Partial<Migration>) {
     super(data);

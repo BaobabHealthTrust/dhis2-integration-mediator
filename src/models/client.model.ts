@@ -1,5 +1,5 @@
-import {DataSet} from './data-set.model';
-import {Entity, model, property} from '@loopback/repository';
+import { DataSet } from './data-set.model';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class Client extends Entity {
@@ -14,6 +14,12 @@ export class Client extends Entity {
     required: true,
   })
   name: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  email: string;
 
   constructor(data?: Partial<Client>) {
     super(data);
