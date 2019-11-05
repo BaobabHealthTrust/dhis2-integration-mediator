@@ -34,10 +34,10 @@ export class MigrationsController {
     if (migration) {
       const client = await this.clientRepository.findOne({ where: { id: migration.clientId } });
       if (client) {
-        const { structureValidatedAt } = migration;
+        const { createdAt } = migration;
         const { email, name } = client;
         return {
-          startTime: structureValidatedAt,
+          startTime: createdAt,
           clientEmail: email,
           clientName: name
         };
