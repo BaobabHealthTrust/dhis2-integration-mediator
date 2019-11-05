@@ -82,6 +82,11 @@ export class Migration extends Entity {
     required: true,
   })
   channelId: string;
+  
+  @property({
+    type: 'date',
+  })
+  createdAt?: string;
 
   constructor(data?: Partial<Migration>) {
     super(data);
