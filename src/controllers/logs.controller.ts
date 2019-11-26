@@ -14,7 +14,7 @@ export class LogsController {
     this.redisClient = redis.createClient(
       {
         host: process.env.DIM_REDIS_HOST,
-        port: Number(process.env.DIM_REDIS_HOST)
+        port: Number(process.env.DIM_REDIS_PORT)
       }
     );
   }
