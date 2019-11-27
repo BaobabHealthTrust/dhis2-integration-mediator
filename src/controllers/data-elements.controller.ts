@@ -68,10 +68,6 @@ export class DataElementsController {
     if (!clientId) {
       return this.res.status(503).send('Interoperability layer client missing from request');
     }
-    const client: number | undefined = await this.dataElementRepository.getClient(clientId);
-    if (!client) {
-      return this.res.status(503).send('Could not fetch client from the database');
-    }
     const writtenToFile = await this.dataElementRepository.writePayloadToFile(this.channelId, data, this.logger);
     if (!writtenToFile) {
       this.logger.info('failed to save payload to file')
